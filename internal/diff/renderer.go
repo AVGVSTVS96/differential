@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/pretty-diff/pretty-diff/internal/themes"
+	"github.com/avgvstvs96/differential/internal/themes"
 )
 
 // RenderUnifiedDiff renders a diff in unified format with syntax highlighting

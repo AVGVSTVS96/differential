@@ -1,4 +1,4 @@
-module github.com/pretty-diff/pretty-diff
+module github.com/avgvstvs96/differential
 
 go 1.21
 

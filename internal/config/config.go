@@ -80,5 +80,5 @@ func (c *Config) ConfigPath() string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".config", "pretty-diff", "config.toml")
+	return filepath.Join(home, ".config", "differential", "config.toml")
 }

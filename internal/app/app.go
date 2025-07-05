@@ -9,9 +9,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/pretty-diff/pretty-diff/internal/config"
-	"github.com/pretty-diff/pretty-diff/internal/diff"
-	"github.com/pretty-diff/pretty-diff/internal/themes"
+	"github.com/avgvstvs96/differential/internal/config"
+	"github.com/avgvstvs96/differential/internal/diff"
+	"github.com/avgvstvs96/differential/internal/themes"
 )
 
 // Mode represents the current mode of the application

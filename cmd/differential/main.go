@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/pretty-diff/pretty-diff/internal/app"
-	"github.com/pretty-diff/pretty-diff/internal/config"
+	"github.com/avgvstvs96/differential/internal/app"
+	"github.com/avgvstvs96/differential/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -17,22 +17,22 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "pretty-diff [file1] [file2]",
+	Use:   "differential [file1] [file2]",
 	Short: "A beautiful TUI for file diffing with syntax highlighting",
-	Long: `Pretty-Diff is a terminal UI for viewing diffs with syntax highlighting,
+	Long: `Differential is a terminal UI for viewing diffs with syntax highlighting,
 character-level changes, and interactive navigation.
 
 It can be used as a drop-in replacement for git diff:
-  git diff | pretty-diff
-  pretty-diff file1.go file2.go
-  pretty-diff HEAD~3 HEAD`,
+  git diff | differential
+  differential file1.go file2.go
+  differential HEAD~3 HEAD`,
 	RunE: runDiff,
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/pretty-diff/config.toml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/differential/config.toml)")
 	rootCmd.Flags().StringP("theme", "t", "dracula", "Color theme to use")
 	rootCmd.Flags().BoolP("side-by-side", "s", false, "Show diff in side-by-side view")
 	rootCmd.Flags().BoolP("line-numbers", "n", true, "Show line numbers")
@@ -50,14 +50,14 @@ func initConfig() {
 	} else {
 		home, err := os.UserHomeDir()
 		if err == nil {
-			viper.AddConfigPath(home + "/.config/pretty-diff")
+			viper.AddConfigPath(home + "/.config/differential")
 		}
 		viper.SetConfigType("toml")
 		viper.SetConfigName("config")
 	}
 
 	viper.AutomaticEnv()
-	viper.SetEnvPrefix("PRETTY_DIFF")
+	viper.SetEnvPrefix("DIFFERENTIAL")
 
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())

@@ -1,4 +1,4 @@
-# Pretty-Diff
+# Differential
 
 > [!WARNING]
 > **Early Alpha - Vibe-Coded Proof of Concept**
@@ -22,14 +22,14 @@ A beautiful terminal UI (TUI) for viewing diffs with syntax highlighting, charac
 
 ```bash
 # Clone the repository
-git clone https://github.com/pretty-diff/pretty-diff
-cd pretty-diff
+git clone https://github.com/avgvstvs96/differential
+cd differential
 
 # Build
-go build ./cmd/pretty-diff
+go build ./cmd/differential
 
 # Optional: Install to PATH
-go install ./cmd/pretty-diff
+go install ./cmd/differential
 ```
 
 ## Usage
@@ -38,17 +38,17 @@ go install ./cmd/pretty-diff
 
 ```bash
 # Compare two files
-pretty-diff file1.go file2.go
+differential file1.go file2.go
 
 # Pipe git diff output
-git diff | pretty-diff
+git diff | differential
 
 # Compare git commits/branches
-pretty-diff HEAD~3 HEAD
-pretty-diff main feature-branch
+differential HEAD~3 HEAD
+differential main feature-branch
 
 # Compare directories
-pretty-diff dir1/ dir2/
+differential dir1/ dir2/
 ```
 
 ### Pipe Mode (Non-Interactive)
@@ -57,21 +57,21 @@ For scripting or when you want static output:
 
 ```bash
 # Force pipe mode with --pipe-mode or -p
-pretty-diff file1.go file2.go --pipe-mode
+differential file1.go file2.go --pipe-mode
 
 # Disable pager for continuous output
-pretty-diff file1.go file2.go --pipe-mode --no-pager
+differential file1.go file2.go --pipe-mode --no-pager
 ```
 
 ### Themes
 
 ```bash
 # List available themes
-pretty-diff --list-themes
+differential --list-themes
 
 # Set theme with -t or --theme
-pretty-diff file1.go file2.go -t monokai
-pretty-diff file1.go file2.go --theme github
+differential file1.go file2.go -t monokai
+differential file1.go file2.go --theme github
 
 # Available themes:
 # - dracula (default)
@@ -88,8 +88,8 @@ pretty-diff file1.go file2.go --theme github
 
 ```bash
 # Side-by-side view with -s or --side-by-side
-pretty-diff file1.go file2.go -s
-pretty-diff file1.go file2.go --side-by-side
+differential file1.go file2.go -s
+differential file1.go file2.go --side-by-side
 
 # In TUI mode, press Tab to toggle between unified and side-by-side
 ```
@@ -98,26 +98,26 @@ pretty-diff file1.go file2.go --side-by-side
 
 ```bash
 # Hide line numbers
-pretty-diff file1.go file2.go --no-line-numbers
+differential file1.go file2.go --no-line-numbers
 
 # Change context lines (default: 3)
-pretty-diff file1.go file2.go -c 5
-pretty-diff file1.go file2.go --context 10
+differential file1.go file2.go -c 5
+differential file1.go file2.go --context 10
 ```
 
 ### Combining Options
 
 ```bash
 # Side-by-side with Nord theme and 10 context lines
-pretty-diff file1.go file2.go -s -t nord -c 10
+differential file1.go file2.go -s -t nord -c 10
 
 # Pipe mode with GitHub theme and no line numbers
-git diff | pretty-diff --pipe-mode -t github --no-line-numbers
+git diff | differential --pipe-mode -t github --no-line-numbers
 ```
 
 ## Interactive TUI Mode
 
-When running without `--pipe-mode`, pretty-diff launches an interactive terminal UI:
+When running without `--pipe-mode`, differential launches an interactive terminal UI:
 
 ### Keyboard Shortcuts
 
@@ -142,7 +142,7 @@ When running without `--pipe-mode`, pretty-diff launches an interactive terminal
 
 ## Configuration
 
-Pretty-diff can be configured via a TOML file at `~/.config/pretty-diff/config.toml`:
+Differential can be configured via a TOML file at `~/.config/differential/config.toml`:
 
 ```toml
 [ui]
@@ -170,16 +170,16 @@ scroll_down = "j"
 
 ## Git Integration
 
-Pretty-diff can be used as a drop-in replacement for git diff:
+Differential can be used as a drop-in replacement for git diff:
 
 ```bash
 # Set as git pager
-git config --global pager.diff "pretty-diff --pipe-mode"
-git config --global pager.show "pretty-diff --pipe-mode"
+git config --global pager.diff "differential --pipe-mode"
+git config --global pager.show "differential --pipe-mode"
 
 # Or use directly
-git diff | pretty-diff
-git show HEAD | pretty-diff
+git diff | differential
+git show HEAD | differential
 ```
 
 ## Examples
@@ -188,56 +188,56 @@ git show HEAD | pretty-diff
 
 ```bash
 # Review your staged changes with syntax highlighting
-git diff --cached | pretty-diff -t github
+git diff --cached | differential -t github
 
 # Compare feature branch with main in side-by-side view
-pretty-diff main feature-branch -s
+differential main feature-branch -s
 
 # Review a specific commit
-git show abc123 | pretty-diff
+git show abc123 | differential
 ```
 
 ### Different File Types
 
-Pretty-diff automatically detects file types and applies appropriate syntax highlighting:
+Differential automatically detects file types and applies appropriate syntax highlighting:
 
 ```bash
 # Python files
-pretty-diff old.py new.py
+differential old.py new.py
 
 # JavaScript/TypeScript
-pretty-diff src/old.ts src/new.ts -t monokai
+differential src/old.ts src/new.ts -t monokai
 
 # Markdown with GitHub theme
-pretty-diff README.old.md README.new.md -t github
+differential README.old.md README.new.md -t github
 
 # JSON with pretty side-by-side view
-pretty-diff config.old.json config.new.json -s
+differential config.old.json config.new.json -s
 ```
 
 ## Tips
 
-1. **Terminal Colors**: Pretty-diff automatically detects if your terminal has a dark or light background and adjusts themes accordingly.
+1. **Terminal Colors**: Differential automatically detects if your terminal has a dark or light background and adjusts themes accordingly.
 
 2. **Large Files**: For better performance with large files, use `--context` to limit the amount of context shown:
    ```bash
-   pretty-diff large1.txt large2.txt -c 1
+   differential large1.txt large2.txt -c 1
    ```
 
 3. **Piping to Less**: If you want to use your own pager:
    ```bash
-   pretty-diff file1 file2 --pipe-mode --no-pager | less -R
+   differential file1 file2 --pipe-mode --no-pager | less -R
    ```
 
 4. **Shell Aliases**: Add convenient aliases to your shell config:
    ```bash
-   alias pd="pretty-diff"
-   alias gd="git diff | pretty-diff --pipe-mode"
+   alias d="differential"
+   alias gd="git diff | differential --pipe-mode"
    ```
 
 ## Architecture
 
-Pretty-diff is built with:
+Differential is built with:
 - **Bubble Tea** - Terminal UI framework
 - **Lipgloss** - Styling and layout
 - **Chroma** - Syntax highlighting
