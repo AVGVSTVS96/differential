@@ -114,7 +114,17 @@ func RunPipeMode(input io.Reader, cfg *config.Config, args []string) error {
 		return fmt.Errorf("failed to format diff: %w", err)
 	}
 
-	// Output with optional pager
+	// Determine if we should use a pager
+	termHeight := getTerminalHeight()
+	lineCount := strings.Count(output, "\n")
+	
+	// Show inline if diff is small enough to fit in terminal
+	if lineCount < (termHeight - 5) {
+		fmt.Print(output)
+		return nil
+	}
+	
+	// Use pager for larger diffs (unless disabled)
 	if shouldUsePager() {
 		return showWithPager(output)
 	}
@@ -386,6 +396,21 @@ func getTerminalWidth() int {
 		return 80
 	}
 	return width
+}
+
+func getTerminalHeight() int {
+	cmd := exec.Command("tput", "lines")
+	output, err := cmd.Output()
+	if err != nil {
+		return 24 // Default terminal height
+	}
+
+	var height int
+	fmt.Sscanf(string(output), "%d", &height)
+	if height <= 0 {
+		return 24
+	}
+	return height
 }
 
 func shouldUsePager() bool {

@@ -7,6 +7,8 @@ import (
 
 	"github.com/avgvstvs96/differential/internal/app"
 	"github.com/avgvstvs96/differential/internal/config"
+	"github.com/avgvstvs96/differential/internal/diff"
+	"github.com/avgvstvs96/differential/internal/themes"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -80,15 +82,47 @@ func runDiff(cmd *cobra.Command, args []string) error {
 
 	// List themes mode
 	if listThemes, _ := cmd.Flags().GetBool("list-themes"); listThemes {
-		themes := []string{
-			"ayu", "catppuccin", "cobalt2", "dracula", "everforest",
-			"github", "gruvbox", "kanagawa", "material", "matrix",
-			"monokai", "nord", "one-dark", "opencode", "palenight",
-			"rosepine", "solarized", "synthwave84", "tokyonight", "zenburn",
+		// Initialize themes first to get the actual list
+		if err := themes.Initialize(); err != nil {
+			return fmt.Errorf("failed to initialize themes: %w", err)
 		}
-		for _, theme := range themes {
-			fmt.Println(theme)
+		
+		// Sample diff for theme preview
+		sampleDiff := `--- a/example.go
++++ b/example.go
+@@ -1,5 +1,5 @@
+ func main() {
+-    fmt.Println("Hello, World!")
++    fmt.Println("Hello, Differential!")
+     x := 42
+ }`
+		
+		themeList := themes.ListThemes()
+		for _, themeName := range themeList {
+			// Set the theme
+			if err := themes.SetTheme(themeName); err != nil {
+				continue
+			}
+			
+			// Print theme name
+			fmt.Printf("\n──────── %s ────────\n", themeName)
+			
+			// Render the sample diff
+			result, err := diff.ParseUnifiedDiff(sampleDiff)
+			if err != nil {
+				continue
+			}
+			
+			opts := diff.RenderOptions{
+				Width:           80,
+				ShowLineNumbers: true,
+				ViewMode:        diff.ViewUnified,
+			}
+			
+			output := diff.RenderUnifiedDiff(result, opts)
+			fmt.Print(output)
 		}
+		fmt.Println()
 		return nil
 	}
 
