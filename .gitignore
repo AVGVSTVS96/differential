@@ -8,7 +8,7 @@ pretty-diff
 
 # Test files
 test*.go
-*_test.go
+!tests/**/*_test.go
 
 # Go build artifacts
 *.test
