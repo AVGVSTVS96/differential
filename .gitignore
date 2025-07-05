@@ -1,0 +1,30 @@
+# Binaries
+pretty-diff
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+test*.go
+*_test.go
+
+# Go build artifacts
+*.test
+*.out
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config
+.env
+.env.local

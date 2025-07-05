@@ -1,0 +1,141 @@
+{
+  "name": "catppuccin",
+  "defs": {
+    "rosewater": "#f5e0dc",
+    "flamingo": "#f2cdcd",
+    "pink": "#f5c2e7",
+    "mauve": "#cba6f7",
+    "red": "#f38ba8",
+    "maroon": "#eba0ac",
+    "peach": "#fab387",
+    "yellow": "#f9e2af",
+    "green": "#a6e3a1",
+    "teal": "#94e2d5",
+    "sky": "#89dceb",
+    "sapphire": "#74c7ec",
+    "blue": "#89b4fa",
+    "lavender": "#b4befe",
+    "text": "#cdd6f4",
+    "subtext1": "#bac2de",
+    "subtext0": "#a6adc8",
+    "overlay2": "#9399b2",
+    "overlay1": "#7f849c",
+    "overlay0": "#6c7086",
+    "surface2": "#585b70",
+    "surface1": "#45475a",
+    "surface0": "#313244",
+    "base": "#1e1e2e",
+    "mantle": "#181825",
+    "crust": "#11111b"
+  },
+  "theme": {
+    "text": {
+      "dark": "text",
+      "light": "#4c4f69"
+    },
+    "textMuted": {
+      "dark": "overlay0",
+      "light": "#9ca0b0"
+    },
+    "error": {
+      "dark": "red",
+      "light": "#d20f39"
+    },
+    "background": {
+      "dark": "base",
+      "light": "#eff1f5"
+    },
+    "backgroundPanel": {
+      "dark": "surface0",
+      "light": "#e6e9ef"
+    },
+    "border": {
+      "dark": "surface1",
+      "light": "#dce0e8"
+    },
+    "selection": {
+      "dark": "surface1",
+      "light": "#ccd0da"
+    },
+    "diffAdded": {
+      "dark": "green",
+      "light": "#40a02b"
+    },
+    "diffRemoved": {
+      "dark": "red",
+      "light": "#d20f39"
+    },
+    "diffContext": {
+      "dark": "text",
+      "light": "#4c4f69"
+    },
+    "diffAddedBg": {
+      "dark": "#1a2e1a",
+      "light": "#e0ffe0"
+    },
+    "diffRemovedBg": {
+      "dark": "#2e1a1a",
+      "light": "#ffe0e0"
+    },
+    "diffContextBg": {
+      "dark": "base",
+      "light": "#eff1f5"
+    },
+    "diffHighlightAdded": {
+      "dark": "#2a3e2a",
+      "light": "#a0ffa0"
+    },
+    "diffHighlightRemoved": {
+      "dark": "#3e2a2a",
+      "light": "#ffa0a0"
+    },
+    "diffLineNumber": {
+      "dark": "overlay0",
+      "light": "#9ca0b0"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#3a4e3a",
+      "light": "#c0ffc0"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#4e3a3a",
+      "light": "#ffc0c0"
+    },
+    "syntaxKeyword": {
+      "dark": "mauve",
+      "light": "#8839ef"
+    },
+    "syntaxFunction": {
+      "dark": "blue",
+      "light": "#1e66f5"
+    },
+    "syntaxType": {
+      "dark": "yellow",
+      "light": "#df8e1d"
+    },
+    "syntaxVariable": {
+      "dark": "text",
+      "light": "#4c4f69"
+    },
+    "syntaxString": {
+      "dark": "green",
+      "light": "#40a02b"
+    },
+    "syntaxNumber": {
+      "dark": "peach",
+      "light": "#fe640b"
+    },
+    "syntaxComment": {
+      "dark": "overlay0",
+      "light": "#9ca0b0"
+    },
+    "syntaxOperator": {
+      "dark": "sky",
+      "light": "#04a5e5"
+    },
+    "syntaxPunctuation": {
+      "dark": "text",
+      "light": "#4c4f69"
+    }
+  }
+}

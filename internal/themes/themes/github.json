@@ -1,0 +1,131 @@
+{
+  "name": "github",
+  "defs": {
+    "bg": "#ffffff",
+    "bgDark": "#0d1117",
+    "fg": "#24292e",
+    "fgDark": "#c9d1d9",
+    "red": "#d73a49",
+    "redDark": "#f85149",
+    "green": "#28a745",
+    "greenDark": "#3fb950",
+    "blue": "#0366d6",
+    "blueDark": "#58a6ff",
+    "purple": "#6f42c1",
+    "purpleDark": "#a371f7",
+    "orange": "#e36209",
+    "orangeDark": "#d29922",
+    "gray": "#6a737d",
+    "grayDark": "#8b949e"
+  },
+  "theme": {
+    "text": {
+      "dark": "fgDark",
+      "light": "fg"
+    },
+    "textMuted": {
+      "dark": "grayDark",
+      "light": "gray"
+    },
+    "error": {
+      "dark": "redDark",
+      "light": "red"
+    },
+    "background": {
+      "dark": "bgDark",
+      "light": "bg"
+    },
+    "backgroundPanel": {
+      "dark": "#161b22",
+      "light": "#f6f8fa"
+    },
+    "border": {
+      "dark": "#30363d",
+      "light": "#e1e4e8"
+    },
+    "selection": {
+      "dark": "#1f6feb",
+      "light": "#0366d6"
+    },
+    "diffAdded": {
+      "dark": "greenDark",
+      "light": "green"
+    },
+    "diffRemoved": {
+      "dark": "redDark",
+      "light": "red"
+    },
+    "diffContext": {
+      "dark": "fgDark",
+      "light": "fg"
+    },
+    "diffAddedBg": {
+      "dark": "#0d2818",
+      "light": "#e6ffed"
+    },
+    "diffRemovedBg": {
+      "dark": "#3a0a0a",
+      "light": "#ffeef0"
+    },
+    "diffContextBg": {
+      "dark": "bgDark",
+      "light": "bg"
+    },
+    "diffHighlightAdded": {
+      "dark": "#1d3821",
+      "light": "#acf2bd"
+    },
+    "diffHighlightRemoved": {
+      "dark": "#4a1a1a",
+      "light": "#fdbdcc"
+    },
+    "diffLineNumber": {
+      "dark": "grayDark",
+      "light": "gray"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#2d4831",
+      "light": "#ccffd8"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#5a2a2a",
+      "light": "#ffd7d5"
+    },
+    "syntaxKeyword": {
+      "dark": "redDark",
+      "light": "red"
+    },
+    "syntaxFunction": {
+      "dark": "purpleDark",
+      "light": "purple"
+    },
+    "syntaxType": {
+      "dark": "blueDark",
+      "light": "blue"
+    },
+    "syntaxVariable": {
+      "dark": "fgDark",
+      "light": "fg"
+    },
+    "syntaxString": {
+      "dark": "blueDark",
+      "light": "blue"
+    },
+    "syntaxNumber": {
+      "dark": "blueDark",
+      "light": "blue"
+    },
+    "syntaxComment": {
+      "dark": "grayDark",
+      "light": "gray"
+    },
+    "syntaxOperator": {
+      "dark": "redDark",
+      "light": "red"
+    },
+    "syntaxPunctuation": {
+      "dark": "fgDark",
+      "light": "fg"
+    }
+  }
+}

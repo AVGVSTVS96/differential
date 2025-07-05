@@ -1,0 +1,131 @@
+{
+  "name": "nord",
+  "defs": {
+    "nord0": "#2e3440",
+    "nord1": "#3b4252",
+    "nord2": "#434c5e",
+    "nord3": "#4c566a",
+    "nord4": "#d8dee9",
+    "nord5": "#e5e9f0",
+    "nord6": "#eceff4",
+    "nord7": "#8fbcbb",
+    "nord8": "#88c0d0",
+    "nord9": "#81a1c1",
+    "nord10": "#5e81ac",
+    "nord11": "#bf616a",
+    "nord12": "#d08770",
+    "nord13": "#ebcb8b",
+    "nord14": "#a3be8c",
+    "nord15": "#b48ead"
+  },
+  "theme": {
+    "text": {
+      "dark": "nord4",
+      "light": "nord0"
+    },
+    "textMuted": {
+      "dark": "nord3",
+      "light": "nord3"
+    },
+    "error": {
+      "dark": "nord11",
+      "light": "nord11"
+    },
+    "background": {
+      "dark": "nord0",
+      "light": "nord6"
+    },
+    "backgroundPanel": {
+      "dark": "nord1",
+      "light": "nord5"
+    },
+    "border": {
+      "dark": "nord3",
+      "light": "nord3"
+    },
+    "selection": {
+      "dark": "nord2",
+      "light": "nord4"
+    },
+    "diffAdded": {
+      "dark": "nord14",
+      "light": "#00aa00"
+    },
+    "diffRemoved": {
+      "dark": "nord11",
+      "light": "#cc0000"
+    },
+    "diffContext": {
+      "dark": "nord4",
+      "light": "nord0"
+    },
+    "diffAddedBg": {
+      "dark": "#2d3a2e",
+      "light": "#e0ffe0"
+    },
+    "diffRemovedBg": {
+      "dark": "#3a2d2d",
+      "light": "#ffe0e0"
+    },
+    "diffContextBg": {
+      "dark": "nord0",
+      "light": "nord6"
+    },
+    "diffHighlightAdded": {
+      "dark": "#3d4a3e",
+      "light": "#90ff90"
+    },
+    "diffHighlightRemoved": {
+      "dark": "#4a3d3d",
+      "light": "#ff9090"
+    },
+    "diffLineNumber": {
+      "dark": "nord3",
+      "light": "nord3"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#3d5a3e",
+      "light": "#c0ffc0"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#5a3d3d",
+      "light": "#ffc0c0"
+    },
+    "syntaxKeyword": {
+      "dark": "nord9",
+      "light": "nord10"
+    },
+    "syntaxFunction": {
+      "dark": "nord8",
+      "light": "nord10"
+    },
+    "syntaxType": {
+      "dark": "nord7",
+      "light": "nord9"
+    },
+    "syntaxVariable": {
+      "dark": "nord4",
+      "light": "nord0"
+    },
+    "syntaxString": {
+      "dark": "nord14",
+      "light": "nord14"
+    },
+    "syntaxNumber": {
+      "dark": "nord15",
+      "light": "nord15"
+    },
+    "syntaxComment": {
+      "dark": "nord3",
+      "light": "nord3"
+    },
+    "syntaxOperator": {
+      "dark": "nord9",
+      "light": "nord10"
+    },
+    "syntaxPunctuation": {
+      "dark": "nord4",
+      "light": "nord0"
+    }
+  }
+}

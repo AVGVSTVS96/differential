@@ -1,0 +1,131 @@
+{
+  "name": "solarized",
+  "defs": {
+    "base03": "#002b36",
+    "base02": "#073642",
+    "base01": "#586e75",
+    "base00": "#657b83",
+    "base0": "#839496",
+    "base1": "#93a1a1",
+    "base2": "#eee8d5",
+    "base3": "#fdf6e3",
+    "yellow": "#b58900",
+    "orange": "#cb4b16",
+    "red": "#dc322f",
+    "magenta": "#d33682",
+    "violet": "#6c71c4",
+    "blue": "#268bd2",
+    "cyan": "#2aa198",
+    "green": "#859900"
+  },
+  "theme": {
+    "text": {
+      "dark": "base0",
+      "light": "base00"
+    },
+    "textMuted": {
+      "dark": "base01",
+      "light": "base1"
+    },
+    "error": {
+      "dark": "red",
+      "light": "red"
+    },
+    "background": {
+      "dark": "base03",
+      "light": "base3"
+    },
+    "backgroundPanel": {
+      "dark": "base02",
+      "light": "base2"
+    },
+    "border": {
+      "dark": "base01",
+      "light": "base1"
+    },
+    "selection": {
+      "dark": "base02",
+      "light": "base2"
+    },
+    "diffAdded": {
+      "dark": "green",
+      "light": "green"
+    },
+    "diffRemoved": {
+      "dark": "red",
+      "light": "red"
+    },
+    "diffContext": {
+      "dark": "base0",
+      "light": "base00"
+    },
+    "diffAddedBg": {
+      "dark": "#072f07",
+      "light": "#e6ffed"
+    },
+    "diffRemovedBg": {
+      "dark": "#2f0707",
+      "light": "#ffeef0"
+    },
+    "diffContextBg": {
+      "dark": "base03",
+      "light": "base3"
+    },
+    "diffHighlightAdded": {
+      "dark": "#173f17",
+      "light": "#acf2bd"
+    },
+    "diffHighlightRemoved": {
+      "dark": "#3f1717",
+      "light": "#fdb8c0"
+    },
+    "diffLineNumber": {
+      "dark": "base01",
+      "light": "base1"
+    },
+    "diffAddedLineNumberBg": {
+      "dark": "#274f27",
+      "light": "#ccffd8"
+    },
+    "diffRemovedLineNumberBg": {
+      "dark": "#4f2727",
+      "light": "#ffd7d5"
+    },
+    "syntaxKeyword": {
+      "dark": "green",
+      "light": "green"
+    },
+    "syntaxFunction": {
+      "dark": "blue",
+      "light": "blue"
+    },
+    "syntaxType": {
+      "dark": "yellow",
+      "light": "yellow"
+    },
+    "syntaxVariable": {
+      "dark": "base0",
+      "light": "base00"
+    },
+    "syntaxString": {
+      "dark": "cyan",
+      "light": "cyan"
+    },
+    "syntaxNumber": {
+      "dark": "magenta",
+      "light": "magenta"
+    },
+    "syntaxComment": {
+      "dark": "base01",
+      "light": "base1"
+    },
+    "syntaxOperator": {
+      "dark": "green",
+      "light": "green"
+    },
+    "syntaxPunctuation": {
+      "dark": "base0",
+      "light": "base00"
+    }
+  }
+}
