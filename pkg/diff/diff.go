@@ -545,7 +545,8 @@ func createStyles(t theme.Theme) (removedLineStyle, addedLineStyle, contextLineS
 	addedLineStyle = styles.NewStyle().Background(t.DiffAddedBg())
 	// Use terminal's default background for context lines (no background set = transparent)
 	contextLineStyle = styles.NewStyle()
-	lineNumberStyle = styles.NewStyle().Foreground(t.TextMuted()).Background(t.DiffLineNumber())
+	// Use transparent background for line numbers with just muted text color
+	lineNumberStyle = styles.NewStyle().Foreground(t.TextMuted())
 	return
 }
 
