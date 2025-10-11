@@ -18,6 +18,7 @@ var (
 	sideBySide bool
 	width      int
 	listThemes bool
+	noPager    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -37,6 +38,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&sideBySide, "side-by-side", "s", false, "Show diff in side-by-side view")
 	rootCmd.Flags().IntVarP(&width, "width", "w", 0, "Terminal width (auto-detect if 0)")
 	rootCmd.Flags().BoolVar(&listThemes, "list-themes", false, "List available themes")
+	rootCmd.Flags().BoolVar(&noPager, "no-pager", false, "Disable pager (output directly to stdout)")
 }
 
 func runDiff(cmd *cobra.Command, args []string) error {
@@ -103,7 +105,15 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to render diff: %w", err)
 	}
 
-	fmt.Print(output)
+	// Output the result (with pager if appropriate)
+	if shouldUsePager() {
+		if err := showWithPager(output); err != nil {
+			// Fallback to direct output if pager fails
+			fmt.Print(output)
+		}
+	} else {
+		fmt.Print(output)
+	}
 	return nil
 }
 
@@ -154,6 +164,90 @@ func getTerminalWidth() int {
 	}
 	
 	return 120 // Final fallback
+}
+
+// shouldUsePager determines if output should be piped through a pager
+func shouldUsePager() bool {
+	// Don't use pager if explicitly disabled
+	if noPager {
+		return false
+	}
+
+	// Don't use pager if output is not a terminal (e.g., piped to file)
+	stat, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		return false
+	}
+
+	return true
+}
+
+// showWithPager pipes output through a pager like less
+func showWithPager(content string) error {
+	// Check for pager preference in environment variables
+	// Order: DIFFERENTIAL_PAGER, BAT_PAGER, PAGER, then default to "less"
+	pagerCmd := os.Getenv("DIFFERENTIAL_PAGER")
+	if pagerCmd == "" {
+		pagerCmd = os.Getenv("BAT_PAGER")
+	}
+	if pagerCmd == "" {
+		pagerCmd = os.Getenv("PAGER")
+	}
+	if pagerCmd == "" {
+		pagerCmd = "less"
+	}
+
+	// Try to find the pager executable
+	pagerPath, err := exec.LookPath(pagerCmd)
+	if err != nil {
+		// If pager not found, try alternatives
+		for _, alternative := range []string{"less", "more", "cat"} {
+			if path, err := exec.LookPath(alternative); err == nil {
+				pagerPath = path
+				pagerCmd = alternative
+				break
+			}
+		}
+		if pagerPath == "" {
+			return fmt.Errorf("no pager found")
+		}
+	}
+
+	// Set up pager command
+	// Use -R flag for less to handle ANSI colors
+	var cmd *exec.Cmd
+	if pagerCmd == "less" {
+		cmd = exec.Command(pagerPath, "-R")
+	} else {
+		cmd = exec.Command(pagerPath)
+	}
+
+	// Pipe content to pager
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Start the pager
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	// Write content to pager
+	if _, err := io.WriteString(stdin, content); err != nil {
+		stdin.Close()
+		return err
+	}
+	stdin.Close()
+
+	// Wait for pager to finish
+	return cmd.Wait()
 }
 
 func main() {
