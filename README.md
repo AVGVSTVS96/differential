@@ -1,8 +1,13 @@
 # Differential
 
+> [!WARNING]
+> **Vibe-Coded Proof of Concept**
+>
+> This is an early alpha proof-of-concept that has not been human reviewed. Use at your own risk.
+
 > [!NOTE]
 > **Complete Rewrite - Now Based on OpenCode**
-> 
+>
 > This project has been completely rewritten to use [OpenCode](https://opencode.ai/)'s battle-tested diff rendering engine. The implementation now exactly matches OpenCode's visual output with all 22 themes, proper ANSI handling, and sophisticated character-level diff highlighting.
 
 A beautiful terminal diff viewer with syntax highlighting, character-level changes, and 22 professionally designed themes. Built on OpenCode's proven diff rendering engine and designed as a delta-like CLI tool.
