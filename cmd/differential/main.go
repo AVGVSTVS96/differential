@@ -121,18 +121,39 @@ func runGitDiff(file1, file2 string) (string, error) {
 }
 
 func getTerminalWidth() int {
-	cmd := exec.Command("tput", "cols")
+	// Try to get terminal size from the controlling terminal
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	
 	output, err := cmd.Output()
-	if err != nil {
-		return 120 // Default width
+	if err == nil {
+		var rows, cols int
+		if n, _ := fmt.Sscanf(string(output), "%d %d", &rows, &cols); n == 2 && cols > 0 {
+			return cols
+		}
 	}
-
-	var w int
-	fmt.Sscanf(string(output), "%d", &w)
-	if w <= 0 {
-		return 120
+	
+	// Fallback to tput
+	cmd = exec.Command("tput", "cols")
+	output, err = cmd.Output()
+	if err == nil {
+		var w int
+		if _, scanErr := fmt.Sscanf(string(output), "%d", &w); scanErr == nil && w > 0 {
+			return w
+		}
 	}
-	return w
+	
+	// Last resort: check COLUMNS environment variable
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		var w int
+		if _, scanErr := fmt.Sscanf(cols, "%d", &w); scanErr == nil && w > 0 {
+			return w
+		}
+	}
+	
+	return 120 // Final fallback
 }
 
 func main() {
