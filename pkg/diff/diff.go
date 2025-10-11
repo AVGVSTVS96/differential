@@ -494,6 +494,8 @@ func SyntaxHighlight(w io.Writer, source, fileName, formatter string, bg color.C
 	s, err := style.Builder().Transform(
 		func(t chroma.StyleEntry) chroma.StyleEntry {
 			if _, ok := bg.(lipgloss.NoColor); ok {
+				// For NoColor, explicitly clear the background
+				t.Background = chroma.Colour(0)
 				return t
 			}
 			r, g, b, _ := bg.RGBA()
@@ -541,7 +543,8 @@ func highlightLine(fileName string, line string, bg color.Color) string {
 func createStyles(t theme.Theme) (removedLineStyle, addedLineStyle, contextLineStyle, lineNumberStyle styles.Style) {
 	removedLineStyle = styles.NewStyle().Background(t.DiffRemovedBg())
 	addedLineStyle = styles.NewStyle().Background(t.DiffAddedBg())
-	contextLineStyle = styles.NewStyle().Background(t.DiffContextBg())
+	// Use terminal's default background for context lines (no background set = transparent)
+	contextLineStyle = styles.NewStyle()
 	lineNumberStyle = styles.NewStyle().Foreground(t.TextMuted()).Background(t.DiffLineNumber())
 	return
 }
@@ -682,7 +685,7 @@ func renderLinePrefix(dl DiffLine, lineNum string, marker string, lineNumberStyl
 	case LineAdded:
 		styledMarker = styles.NewStyle().Foreground(t.DiffAdded()).Background(t.DiffAddedBg()).Render(marker)
 	case LineContext:
-		styledMarker = styles.NewStyle().Foreground(t.TextMuted()).Background(t.DiffContextBg()).Render(marker)
+		styledMarker = styles.NewStyle().Foreground(t.TextMuted()).Render(marker)
 	default:
 		styledMarker = marker
 	}
@@ -693,7 +696,12 @@ func renderLinePrefix(dl DiffLine, lineNum string, marker string, lineNumberStyl
 // renderLineContent renders the content of a diff line with syntax and intra-line highlighting
 func renderLineContent(fileName string, dl DiffLine, bgStyle styles.Style, highlightColor compat.AdaptiveColor, width int) string {
 	// Apply syntax highlighting
-	content := highlightLine(fileName, dl.Content, bgStyle.GetBackground())
+	// For context lines, use NoColor to prevent syntax highlighter from adding background
+	bg := bgStyle.GetBackground()
+	if _, ok := bg.(lipgloss.NoColor); ok {
+		bg = lipgloss.NoColor{}
+	}
+	content := highlightLine(fileName, dl.Content, bg)
 
 	// Apply intra-line highlighting if needed
 	if len(dl.Segments) > 0 && (dl.Kind == LineRemoved || dl.Kind == LineAdded) {
@@ -776,7 +784,8 @@ func renderDiffColumnLine(
 	t theme.Theme,
 ) string {
 	if dl == nil {
-		contextLineStyle := styles.NewStyle().Background(t.DiffContextBg())
+		// Use transparent background for empty cells
+		contextLineStyle := styles.NewStyle()
 		return contextLineStyle.Width(colWidth).Render("")
 	}
 
