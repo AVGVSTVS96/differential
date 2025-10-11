@@ -4,155 +4,135 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 
-	"github.com/avgvstvs96/differential/internal/app"
-	"github.com/avgvstvs96/differential/internal/config"
-	"github.com/avgvstvs96/differential/internal/diff"
-	"github.com/avgvstvs96/differential/internal/themes"
+	"github.com/avgvstvs96/differential/pkg/diff"
+	"github.com/avgvstvs96/differential/pkg/styles"
+	"github.com/avgvstvs96/differential/pkg/theme"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
-	version = "0.1.0"
-	cfgFile string
+	version    = "0.2.0"
+	themeName  string
+	sideBySide bool
+	width      int
+	listThemes bool
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "differential [file1] [file2]",
-	Short: "A beautiful TUI for file diffing with syntax highlighting",
-	Long: `Differential is a terminal UI for viewing diffs with syntax highlighting,
-character-level changes, and interactive navigation.
+	Short: "A beautiful diff tool with syntax highlighting",
+	Long: `Differential is a terminal tool for viewing diffs with syntax highlighting,
+character-level changes, and beautiful themes.
 
 It can be used as a drop-in replacement for git diff:
   git diff | differential
-  differential file1.go file2.go
-  differential HEAD~3 HEAD`,
+  differential file1.go file2.go`,
 	RunE: runDiff,
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/differential/config.toml)")
-	rootCmd.Flags().StringP("theme", "t", "dracula", "Color theme to use")
-	rootCmd.Flags().BoolP("side-by-side", "s", false, "Show diff in side-by-side view")
-	rootCmd.Flags().BoolP("line-numbers", "n", true, "Show line numbers")
-	rootCmd.Flags().IntP("context", "c", 3, "Number of context lines to show")
-	rootCmd.Flags().BoolP("list-themes", "", false, "List available themes")
-	rootCmd.Flags().BoolP("no-pager", "", false, "Disable pager for output")
-	rootCmd.Flags().BoolP("pipe-mode", "p", false, "Force pipe mode (non-interactive)")
-
-	viper.BindPFlags(rootCmd.Flags())
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			viper.AddConfigPath(home + "/.config/differential")
-		}
-		viper.SetConfigType("toml")
-		viper.SetConfigName("config")
-	}
-
-	viper.AutomaticEnv()
-	viper.SetEnvPrefix("DIFFERENTIAL")
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	rootCmd.Flags().StringVarP(&themeName, "theme", "t", "opencode", "Color theme to use")
+	rootCmd.Flags().BoolVarP(&sideBySide, "side-by-side", "s", false, "Show diff in side-by-side view")
+	rootCmd.Flags().IntVarP(&width, "width", "w", 0, "Terminal width (auto-detect if 0)")
+	rootCmd.Flags().BoolVar(&listThemes, "list-themes", false, "List available themes")
 }
 
 func runDiff(cmd *cobra.Command, args []string) error {
-	cfg := config.NewConfig()
-
-	// Apply CLI flags
-	if theme, _ := cmd.Flags().GetString("theme"); theme != "" {
-		cfg.UI.Theme = theme
-	}
-	if sideBySide, _ := cmd.Flags().GetBool("side-by-side"); sideBySide {
-		cfg.UI.DefaultView = "side-by-side"
-	}
-	if lineNumbers, _ := cmd.Flags().GetBool("line-numbers"); !lineNumbers {
-		cfg.UI.LineNumbers = false
+	// Initialize themes
+	if err := theme.LoadThemesFromJSON(); err != nil {
+		return fmt.Errorf("failed to load themes: %w", err)
 	}
 
 	// List themes mode
-	if listThemes, _ := cmd.Flags().GetBool("list-themes"); listThemes {
-		// Initialize themes first to get the actual list
-		if err := themes.Initialize(); err != nil {
-			return fmt.Errorf("failed to initialize themes: %w", err)
+	if listThemes {
+		themes := theme.AvailableThemes()
+		fmt.Println("Available themes:")
+		for _, name := range themes {
+			fmt.Printf("  - %s\n", name)
 		}
-		
-		// Sample diff for theme preview
-		sampleDiff := `--- a/example.go
-+++ b/example.go
-@@ -1,5 +1,5 @@
- func main() {
--    fmt.Println("Hello, World!")
-+    fmt.Println("Hello, Differential!")
-     x := 42
- }`
-		
-		themeList := themes.ListThemes()
-		for _, themeName := range themeList {
-			// Set the theme
-			if err := themes.SetTheme(themeName); err != nil {
-				continue
-			}
-			
-			// Print theme name
-			fmt.Printf("\n──────── %s ────────\n", themeName)
-			
-			// Render the sample diff
-			result, err := diff.ParseUnifiedDiff(sampleDiff)
-			if err != nil {
-				continue
-			}
-			
-			opts := diff.RenderOptions{
-				Width:           80,
-				ShowLineNumbers: true,
-				ViewMode:        diff.ViewUnified,
-			}
-			
-			output := diff.RenderUnifiedDiff(result, opts)
-			fmt.Print(output)
-		}
-		fmt.Println()
 		return nil
 	}
 
-	// Determine mode
-	isPipeMode := false
-	var input io.Reader
+	// Set theme
+	if err := theme.SetTheme(themeName); err != nil {
+		return fmt.Errorf("invalid theme %q: %w", themeName, err)
+	}
 
-	// Check if stdin has data
+	// Detect terminal info
+	termInfo := theme.DetectTerminal()
+	theme.Terminal = termInfo
+	styles.Terminal.BackgroundIsDark = termInfo.BackgroundIsDark
+
+	// Auto-detect width if not specified
+	if width == 0 {
+		width = getTerminalWidth()
+	}
+
+	// Get diff input
+	var diffText string
+	var err error
+
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		isPipeMode = true
-		input = os.Stdin
-	}
-
-	// Force pipe mode flag
-	if forceMode, _ := cmd.Flags().GetBool("pipe-mode"); forceMode {
-		isPipeMode = true
-		// If no stdin input but files provided, we'll generate diff in RunPipeMode
-		if input == nil && len(args) > 0 {
-			// Don't set input, let RunPipeMode handle file args
+		// Reading from pipe
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return fmt.Errorf("failed to read stdin: %w", err)
 		}
+		diffText = string(data)
+	} else if len(args) == 2 {
+		// Compare two files
+		diffText, err = runGitDiff(args[0], args[1])
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("usage: differential [file1] [file2] or pipe diff output to differential")
 	}
 
-	if isPipeMode {
-		// Pipe mode - render diff and exit
-		return app.RunPipeMode(input, cfg, args)
+	// Render diff
+	var output string
+	if sideBySide {
+		output, err = diff.FormatDiff("", diffText, diff.WithWidth(width))
+	} else {
+		output, err = diff.FormatUnifiedDiff("", diffText, diff.WithWidth(width))
+	}
+	if err != nil {
+		return fmt.Errorf("failed to render diff: %w", err)
 	}
 
-	// TUI mode
-	return app.RunTUIMode(args, cfg)
+	fmt.Print(output)
+	return nil
+}
+
+func runGitDiff(file1, file2 string) (string, error) {
+	cmd := exec.Command("diff", "-u", file1, file2)
+	output, err := cmd.Output()
+	if err != nil {
+		// diff returns exit code 1 when files differ, which is normal
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+			return string(output), nil
+		}
+		return "", fmt.Errorf("diff command failed: %w", err)
+	}
+	return string(output), nil
+}
+
+func getTerminalWidth() int {
+	cmd := exec.Command("tput", "cols")
+	output, err := cmd.Output()
+	if err != nil {
+		return 120 // Default width
+	}
+
+	var w int
+	fmt.Sscanf(string(output), "%d", &w)
+	if w <= 0 {
+		return 120
+	}
+	return w
 }
 
 func main() {
