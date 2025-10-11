@@ -19,15 +19,18 @@ type CoreConfig struct {
 
 // DisplayConfig contains display and formatting settings
 type DisplayConfig struct {
-	Width            int    `toml:"width"`
-	Tabs             int    `toml:"tabs"`
-	MaxLineLength    int    `toml:"max-line-length"`
-	Unified          int    `toml:"unified"`
-	WrapMaxLines     string `toml:"wrap-max-lines"`
-	WrapLeftSymbol   string `toml:"wrap-left-symbol"`
-	WrapRightSymbol  string `toml:"wrap-right-symbol"`
-	RelativePaths    bool   `toml:"relative-paths"`
-	KeepPlusMinusMarkers bool `toml:"keep-plus-minus-markers"`
+	Width                int    `toml:"width"`
+	Tabs                 int    `toml:"tabs"`
+	MaxLineLength        int    `toml:"max-line-length"`
+	Unified              int    `toml:"unified"`
+	WrapMaxLines         string `toml:"wrap-max-lines"`
+	WrapLeftSymbol       string `toml:"wrap-left-symbol"`
+	WrapRightSymbol      string `toml:"wrap-right-symbol"`
+	RelativePaths        bool   `toml:"relative-paths"`
+	KeepPlusMinusMarkers bool   `toml:"keep-plus-minus-markers"`
+	IgnoreAllSpace       bool   `toml:"ignore-all-space"`
+	IgnoreSpaceChange    bool   `toml:"ignore-space-change"`
+	IgnoreBlankLines     bool   `toml:"ignore-blank-lines"`
 }
 
 // ColorsConfig contains color and syntax highlighting settings

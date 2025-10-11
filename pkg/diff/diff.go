@@ -21,6 +21,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	
+	"github.com/avgvstvs96/differential/pkg/config"
 	"github.com/avgvstvs96/differential/pkg/styles"
 	"github.com/avgvstvs96/differential/pkg/theme"
 	"github.com/avgvstvs96/differential/pkg/util"
@@ -695,14 +696,20 @@ func renderLinePrefix(dl DiffLine, lineNum string, marker string, lineNumberStyl
 }
 
 // renderLineContent renders the content of a diff line with syntax and intra-line highlighting
-func renderLineContent(fileName string, dl DiffLine, bgStyle styles.Style, highlightColor compat.AdaptiveColor, width int) string {
+func renderLineContent(fileName string, dl DiffLine, bgStyle styles.Style, highlightColor compat.AdaptiveColor, width int, cfg *config.Config) string {
+	// Process content (tab expansion, truncation)
+	content := dl.Content
+	if cfg != nil {
+		content = ProcessLineContent(content, cfg)
+	}
+	
 	// Apply syntax highlighting
 	// For context lines, use NoColor to prevent syntax highlighter from adding background
 	bg := bgStyle.GetBackground()
 	if _, ok := bg.(lipgloss.NoColor); ok {
 		bg = lipgloss.NoColor{}
 	}
-	content := highlightLine(fileName, dl.Content, bg)
+	content = highlightLine(fileName, content, bg)
 
 	// Apply intra-line highlighting if needed
 	if len(dl.Segments) > 0 && (dl.Kind == LineRemoved || dl.Kind == LineAdded) {
@@ -725,7 +732,7 @@ func renderLineContent(fileName string, dl DiffLine, bgStyle styles.Style, highl
 }
 
 // renderUnifiedLine renders a single line in unified diff format
-func renderUnifiedLine(fileName string, dl DiffLine, width int, t theme.Theme) string {
+func renderUnifiedLine(fileName string, dl DiffLine, width int, t theme.Theme, cfg *config.Config) string {
 	removedLineStyle, addedLineStyle, contextLineStyle, lineNumberStyle := createStyles(t)
 
 	// Determine line style and marker based on line type
@@ -771,7 +778,7 @@ func renderUnifiedLine(fileName string, dl DiffLine, width int, t theme.Theme) s
 	// Render the content
 	prefixWidth := ansi.StringWidth(prefix)
 	contentWidth := width - prefixWidth
-	content := renderLineContent(fileName, dl, bgStyle, highlightColor, contentWidth)
+	content := renderLineContent(fileName, dl, bgStyle, highlightColor, contentWidth, cfg)
 
 	return prefix + content
 }
@@ -783,6 +790,7 @@ func renderDiffColumnLine(
 	colWidth int,
 	isLeftColumn bool,
 	t theme.Theme,
+	cfg *config.Config,
 ) string {
 	if dl == nil {
 		// Use transparent background for empty cells
@@ -855,19 +863,19 @@ func renderDiffColumnLine(
 	// Render the content
 	prefixWidth := ansi.StringWidth(prefix)
 	contentWidth := colWidth - prefixWidth
-	content := renderLineContent(fileName, *dl, bgStyle, highlightColor, contentWidth)
+	content := renderLineContent(fileName, *dl, bgStyle, highlightColor, contentWidth, cfg)
 
 	return prefix + content
 }
 
 // renderLeftColumn formats the left side of a side-by-side diff
-func renderLeftColumn(fileName string, dl *DiffLine, colWidth int) string {
-	return renderDiffColumnLine(fileName, dl, colWidth, true, theme.CurrentTheme())
+func renderLeftColumn(fileName string, dl *DiffLine, colWidth int, cfg *config.Config) string {
+	return renderDiffColumnLine(fileName, dl, colWidth, true, theme.CurrentTheme(), cfg)
 }
 
 // renderRightColumn formats the right side of a side-by-side diff
-func renderRightColumn(fileName string, dl *DiffLine, colWidth int) string {
-	return renderDiffColumnLine(fileName, dl, colWidth, false, theme.CurrentTheme())
+func renderRightColumn(fileName string, dl *DiffLine, colWidth int, cfg *config.Config) string {
+	return renderDiffColumnLine(fileName, dl, colWidth, false, theme.CurrentTheme(), cfg)
 }
 
 // -------------------------------------------------------------------------
@@ -875,9 +883,9 @@ func renderRightColumn(fileName string, dl *DiffLine, colWidth int) string {
 // -------------------------------------------------------------------------
 
 // RenderUnifiedHunk formats a hunk for unified display
-func RenderUnifiedHunk(fileName string, h Hunk, opts ...UnifiedOption) string {
+func RenderUnifiedHunk(fileName string, h Hunk, cfg *config.Config, opts ...UnifiedOption) string {
 	// Apply options to create the configuration
-	config := NewUnifiedConfig(opts...)
+	renderConfig := NewUnifiedConfig(opts...)
 
 	// Make a copy of the hunk so we don't modify the original
 	hunkCopy := Hunk{Lines: make([]DiffLine, len(h.Lines))}
@@ -887,19 +895,19 @@ func RenderUnifiedHunk(fileName string, h Hunk, opts ...UnifiedOption) string {
 	HighlightIntralineChanges(&hunkCopy)
 
 	var sb strings.Builder
-	sb.Grow(len(hunkCopy.Lines) * config.Width)
+	sb.Grow(len(hunkCopy.Lines) * renderConfig.Width)
 
 	util.WriteStringsPar(&sb, hunkCopy.Lines, func(line DiffLine) string {
-		return renderUnifiedLine(fileName, line, config.Width, theme.CurrentTheme()) + "\n"
+		return renderUnifiedLine(fileName, line, renderConfig.Width, theme.CurrentTheme(), cfg) + "\n"
 	})
 
 	return sb.String()
 }
 
 // RenderSideBySideHunk formats a hunk for side-by-side display
-func RenderSideBySideHunk(fileName string, h Hunk, opts ...UnifiedOption) string {
+func RenderSideBySideHunk(fileName string, h Hunk, cfg *config.Config, opts ...UnifiedOption) string {
 	// Apply options to create the configuration
-	config := NewSideBySideConfig(opts...)
+	renderConfig := NewSideBySideConfig(opts...)
 
 	// Make a copy of the hunk so we don't modify the original
 	hunkCopy := Hunk{Lines: make([]DiffLine, len(h.Lines))}
@@ -912,10 +920,10 @@ func RenderSideBySideHunk(fileName string, h Hunk, opts ...UnifiedOption) string
 	pairs := pairLines(hunkCopy.Lines)
 
 	// Calculate column width
-	colWidth := config.Width / 2
+	colWidth := renderConfig.Width / 2
 
 	leftWidth := colWidth
-	rightWidth := config.Width - colWidth
+	rightWidth := renderConfig.Width - colWidth
 	var sb strings.Builder
 
 	util.WriteStringsPar(&sb, pairs, func(p linePair) string {
@@ -924,11 +932,11 @@ func RenderSideBySideHunk(fileName string, h Hunk, opts ...UnifiedOption) string
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			leftStr = renderLeftColumn(fileName, p.left, leftWidth)
+			leftStr = renderLeftColumn(fileName, p.left, leftWidth, cfg)
 		}()
 		go func() {
 			defer wg.Done()
-			rightStr = renderRightColumn(fileName, p.right, rightWidth)
+			rightStr = renderRightColumn(fileName, p.right, rightWidth, cfg)
 		}()
 		wg.Wait()
 		return leftStr + rightStr + "\n"
@@ -938,7 +946,7 @@ func RenderSideBySideHunk(fileName string, h Hunk, opts ...UnifiedOption) string
 }
 
 // FormatUnifiedDiff creates a unified formatted view of a diff
-func FormatUnifiedDiff(filename string, diffText string, opts ...UnifiedOption) (string, error) {
+func FormatUnifiedDiff(filename string, diffText string, cfg *config.Config, opts ...UnifiedOption) (string, error) {
 	diffResult, err := ParseUnifiedDiff(diffText)
 	if err != nil {
 		return "", err
@@ -946,14 +954,14 @@ func FormatUnifiedDiff(filename string, diffText string, opts ...UnifiedOption) 
 
 	var sb strings.Builder
 	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
-		return RenderUnifiedHunk(filename, h, opts...)
+		return RenderUnifiedHunk(filename, h, cfg, opts...)
 	})
 
 	return sb.String(), nil
 }
 
 // FormatDiff creates a side-by-side formatted view of a diff
-func FormatDiff(filename string, diffText string, opts ...UnifiedOption) (string, error) {
+func FormatDiff(filename string, diffText string, cfg *config.Config, opts ...UnifiedOption) (string, error) {
 	diffResult, err := ParseUnifiedDiff(diffText)
 	if err != nil {
 		return "", err
@@ -961,7 +969,7 @@ func FormatDiff(filename string, diffText string, opts ...UnifiedOption) (string
 
 	var sb strings.Builder
 	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
-		return RenderSideBySideHunk(filename, h, opts...)
+		return RenderSideBySideHunk(filename, h, cfg, opts...)
 	})
 
 	return sb.String(), nil

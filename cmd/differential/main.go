@@ -22,17 +22,20 @@ var (
 	noGitConfig    bool
 	
 	// Display flags
-	themeName      string
-	sideBySide     bool
-	width          int
-	listThemes     bool
-	noPager        bool
-	unified        int
-	tabs           int
-	colorMode      string
-	lineNumbers    bool
-	relativePaths  bool
+	themeName           string
+	sideBySide          bool
+	width               int
+	listThemes          bool
+	noPager             bool
+	unified             int
+	tabs                int
+	colorMode           string
+	lineNumbers         bool
+	relativePaths       bool
 	keepPlusMinusMakers bool
+	ignoreAllSpace      bool
+	ignoreSpaceChange   bool
+	ignoreBlankLines    bool
 	
 	// Global config (loaded from file + CLI flags)
 	globalConfig *config.Config
@@ -68,6 +71,11 @@ func init() {
 	rootCmd.Flags().StringVar(&colorMode, "color", "", "When to use colors: auto, always, never (default: auto)")
 	rootCmd.Flags().BoolVar(&relativePaths, "relative-paths", false, "Output file paths relative to current directory")
 	rootCmd.Flags().BoolVar(&keepPlusMinusMakers, "keep-plus-minus-markers", false, "Prefix added/removed lines with +/- characters")
+	
+	// Whitespace flags (no short flags to avoid conflicts)
+	rootCmd.Flags().BoolVar(&ignoreAllSpace, "ignore-all-space", false, "Ignore all white space")
+	rootCmd.Flags().BoolVar(&ignoreSpaceChange, "ignore-space-change", false, "Ignore changes in amount of white space")
+	rootCmd.Flags().BoolVar(&ignoreBlankLines, "ignore-blank-lines", false, "Ignore changes whose lines are all blank")
 	
 	// Pager flags
 	rootCmd.Flags().BoolVar(&noPager, "no-pager", false, "Disable pager (output directly to stdout)")
@@ -127,7 +135,7 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		diffText = string(data)
 	} else if len(args) == 2 {
 		// Compare two files
-		diffText, err = runGitDiff(args[0], args[1], globalConfig.Display.Unified)
+		diffText, err = runGitDiff(args[0], args[1], globalConfig)
 		if err != nil {
 			return err
 		}
@@ -138,9 +146,9 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	// Render diff
 	var output string
 	if globalConfig.Core.SideBySide {
-		output, err = diff.FormatDiff("", diffText, diff.WithWidth(globalConfig.Display.Width))
+		output, err = diff.FormatDiff("", diffText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
 	} else {
-		output, err = diff.FormatUnifiedDiff("", diffText, diff.WithWidth(globalConfig.Display.Width))
+		output, err = diff.FormatUnifiedDiff("", diffText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
 	}
 	if err != nil {
 		return fmt.Errorf("failed to render diff: %w", err)
@@ -163,11 +171,25 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runGitDiff(file1, file2 string, contextLines int) (string, error) {
+func runGitDiff(file1, file2 string, cfg *config.Config) (string, error) {
 	args := []string{"-u"}
-	if contextLines > 0 {
-		args = append(args, fmt.Sprintf("-U%d", contextLines))
+	
+	// Context lines
+	if cfg.Display.Unified > 0 {
+		args = append(args, fmt.Sprintf("-U%d", cfg.Display.Unified))
 	}
+	
+	// Whitespace handling
+	if cfg.Display.IgnoreAllSpace {
+		args = append(args, "-w")
+	}
+	if cfg.Display.IgnoreSpaceChange {
+		args = append(args, "-b")
+	}
+	if cfg.Display.IgnoreBlankLines {
+		args = append(args, "-B")
+	}
+	
 	args = append(args, file1, file2)
 	cmd := exec.Command("diff", args...)
 	output, err := cmd.Output()
@@ -340,6 +362,15 @@ func applyCLIFlags() {
 	}
 	if keepPlusMinusMakers {
 		globalConfig.Display.KeepPlusMinusMarkers = keepPlusMinusMakers
+	}
+	if ignoreAllSpace {
+		globalConfig.Display.IgnoreAllSpace = ignoreAllSpace
+	}
+	if ignoreSpaceChange {
+		globalConfig.Display.IgnoreSpaceChange = ignoreSpaceChange
+	}
+	if ignoreBlankLines {
+		globalConfig.Display.IgnoreBlankLines = ignoreBlankLines
 	}
 }
 
