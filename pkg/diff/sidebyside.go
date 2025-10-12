@@ -142,6 +142,15 @@ func RenderSideBySideHunk(fileName string, h Hunk, cfg *config.Config, opts ...U
 	// Apply options to create the configuration
 	renderConfig := NewSideBySideConfig(opts...)
 
+	var sb strings.Builder
+
+	// Render hunk header first (spanning full width)
+	if h.Header != "" {
+		header := RenderHunkHeader(h, cfg, renderConfig.Width)
+		sb.WriteString(header)
+		sb.WriteString("\n")
+	}
+
 	// Make a copy of the hunk so we don't modify the original
 	hunkCopy := Hunk{Lines: make([]DiffLine, len(h.Lines))}
 	copy(hunkCopy.Lines, h.Lines)
@@ -157,7 +166,6 @@ func RenderSideBySideHunk(fileName string, h Hunk, cfg *config.Config, opts ...U
 
 	leftWidth := colWidth
 	rightWidth := renderConfig.Width - colWidth
-	var sb strings.Builder
 
 	util.WriteStringsPar(&sb, pairs, func(p linePair) string {
 		wg := &sync.WaitGroup{}
@@ -186,6 +194,12 @@ func FormatDiff(filename string, diffText string, cfg *config.Config, opts ...Un
 	}
 
 	var sb strings.Builder
+
+	// Add file header if enabled
+	if cfg != nil && cfg.Display.ShowFileHeaders {
+		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats, cfg.Features.Hyperlinks))
+	}
+
 	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
 		return RenderSideBySideHunk(filename, h, cfg, opts...)
 	})

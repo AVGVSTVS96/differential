@@ -17,10 +17,11 @@ package config
 
 // Config represents the complete configuration for differential
 type Config struct {
-	Core    CoreConfig    `toml:"core"`
-	Display DisplayConfig `toml:"display"`
-	Colors  ColorsConfig  `toml:"colors"`
-	Style   StyleConfig   `toml:"style"`
+	Core     CoreConfig     `toml:"core"`
+	Display  DisplayConfig  `toml:"display"`
+	Colors   ColorsConfig   `toml:"colors"`
+	Style    StyleConfig    `toml:"style"`
+	Features FeaturesConfig `toml:"features"`
 }
 
 // CoreConfig contains core application settings
@@ -46,6 +47,8 @@ type DisplayConfig struct {
 	IgnoreAllSpace       bool   `toml:"ignore-all-space"`
 	IgnoreSpaceChange    bool   `toml:"ignore-space-change"`
 	IgnoreBlankLines     bool   `toml:"ignore-blank-lines"`
+	ShowFileHeaders      bool   `toml:"show-file-headers"` // Show file status headers
+	ShowStats            bool   `toml:"show-stats"`        // Show diff statistics
 }
 
 // ColorsConfig contains color and syntax highlighting settings
@@ -64,4 +67,10 @@ type StyleConfig struct {
 	CommitStyle        string `toml:"commit-style"`
 	FileStyle          string `toml:"file-style"`
 	HunkHeaderStyle    string `toml:"hunk-header-style"`
+}
+
+// FeaturesConfig contains feature flags for navigation and interactivity
+type FeaturesConfig struct {
+	Navigate   bool `toml:"navigate"`   // Enable hunk navigation (interactive mode)
+	Hyperlinks bool `toml:"hyperlinks"` // Enable clickable file path hyperlinks
 }

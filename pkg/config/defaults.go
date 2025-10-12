@@ -16,15 +16,17 @@ func DefaultConfig() *Config {
 			NoPager:     false,
 		},
 		Display: DisplayConfig{
-			Width:              0, // auto-detect
-			Tabs:               4,
-			MaxLineLength:      3000,
-			Unified:            3, // default context lines
-			WrapMaxLines:       "2",
-			WrapLeftSymbol:     "↵",
-			WrapRightSymbol:    "↵",
-			RelativePaths:      false,
+			Width:                0, // auto-detect
+			Tabs:                 4,
+			MaxLineLength:        3000,
+			Unified:              3, // default context lines
+			WrapMaxLines:         "2",
+			WrapLeftSymbol:       "↵",
+			WrapRightSymbol:      "↵",
+			RelativePaths:        false,
 			KeepPlusMinusMarkers: false,
+			ShowFileHeaders:      true,
+			ShowStats:            true,
 		},
 		Colors: ColorsConfig{
 			SyntaxTheme: "auto",
@@ -39,6 +41,10 @@ func DefaultConfig() *Config {
 			CommitStyle:     "raw",
 			FileStyle:       "blue",
 			HunkHeaderStyle: "line-number syntax",
+		},
+		Features: FeaturesConfig{
+			Navigate:   false, // Interactive navigation (Phase 4B)
+			Hyperlinks: true,  // Enable clickable file paths by default
 		},
 	}
 }
@@ -69,8 +75,6 @@ func GitConfigPath() string {
 }
 
 // DeltaToConfigKeyMap maps delta config keys to differential config structure
-// Note: Some keys are mapped but not yet implemented (marked as planned):
-// - "navigate" and "hyperlinks" are planned for Phase 4 (Navigation & Interactivity)
 var DeltaToConfigKeyMap = map[string]string{
 	"theme":                    "core.theme",
 	"side-by-side":             "core.side-by-side",
@@ -82,8 +86,8 @@ var DeltaToConfigKeyMap = map[string]string{
 	"syntax-theme":             "colors.syntax-theme",
 	"dark":                     "colors.dark",
 	"light":                    "colors.light",
-	"navigate":                 "features.navigate",     // Planned: Phase 4
-	"hyperlinks":               "features.hyperlinks",   // Planned: Phase 4
+	"navigate":                 "features.navigate",
+	"hyperlinks":               "features.hyperlinks",
 	"relative-paths":           "display.relative-paths",
 	"keep-plus-minus-markers":  "display.keep-plus-minus-markers",
 	"minus-style":              "style.minus-style",

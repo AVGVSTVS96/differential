@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 
 	"github.com/avgvstvs96/differential/pkg/config"
 	"github.com/avgvstvs96/differential/pkg/diff"
@@ -36,6 +37,10 @@ var (
 	ignoreAllSpace      bool
 	ignoreSpaceChange   bool
 	ignoreBlankLines    bool
+	
+	// Feature flags
+	hyperlinks bool
+	navigate   bool
 	
 	// Global config (loaded from file + CLI flags)
 	globalConfig *config.Config
@@ -77,6 +82,10 @@ func init() {
 	rootCmd.Flags().BoolVar(&ignoreSpaceChange, "ignore-space-change", false, "Ignore changes in amount of white space")
 	rootCmd.Flags().BoolVar(&ignoreBlankLines, "ignore-blank-lines", false, "Ignore changes whose lines are all blank")
 	
+	// Feature flags
+	rootCmd.Flags().BoolVar(&hyperlinks, "hyperlinks", false, "Enable clickable file path hyperlinks (auto-detected by default)")
+	rootCmd.Flags().BoolVar(&navigate, "navigate", false, "Enable navigation mode (not yet implemented)")
+	
 	// Pager flags
 	rootCmd.Flags().BoolVar(&noPager, "no-pager", false, "Disable pager (output directly to stdout)")
 }
@@ -90,7 +99,12 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	}
 	
 	// Apply CLI flag overrides
-	applyCLIFlags()
+	applyCLIFlags(cmd)
+	
+	// Show message if navigate mode is requested
+	if globalConfig.Features.Navigate {
+		fmt.Fprintln(os.Stderr, "Note: Interactive navigation mode is not yet implemented (planned for Phase 4B)")
+	}
 	
 	// Initialize themes
 	if err := theme.LoadThemesFromJSON(); err != nil {
@@ -143,16 +157,39 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("usage: differential [file1] [file2] or pipe diff output to differential")
 	}
 
-	// Render diff
-	var output string
-	if globalConfig.Core.SideBySide {
-		output, err = diff.FormatDiff("", diffText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
-	} else {
-		output, err = diff.FormatUnifiedDiff("", diffText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
-	}
+	// Parse diff (may contain multiple files)
+	results, err := diff.ParseMultiFileDiff(diffText)
 	if err != nil {
-		return fmt.Errorf("failed to render diff: %w", err)
+		return fmt.Errorf("failed to parse diff: %w", err)
 	}
+
+	// Render each file's diff
+	var sb strings.Builder
+	for i, result := range results {
+		var output string
+		
+		// Convert result back to unified diff format for rendering
+		// (This is a bit of a workaround; ideally we'd refactor FormatDiff to accept DiffResult)
+		resultText := formatDiffResultAsText(result)
+		
+		if globalConfig.Core.SideBySide {
+			output, err = diff.FormatDiff("", resultText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
+		} else {
+			output, err = diff.FormatUnifiedDiff("", resultText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
+		}
+		if err != nil {
+			return fmt.Errorf("failed to render diff for file %s: %w", result.NewFile, err)
+		}
+		
+		sb.WriteString(output)
+		
+		// Add separator between files (except after last file)
+		if i < len(results)-1 {
+			sb.WriteString("\n")
+		}
+	}
+
+	output := sb.String()
 
 	// Strip ANSI codes if color mode is never
 	if globalConfig.Colors.ColorMode == "never" {
@@ -330,8 +367,38 @@ func showWithPager(content string) error {
 	return cmd.Wait()
 }
 
+// formatDiffResultAsText converts a DiffResult back to unified diff text format
+func formatDiffResultAsText(result diff.DiffResult) string {
+	var sb strings.Builder
+	
+	// Write file headers
+	sb.WriteString(fmt.Sprintf("--- a/%s\n", result.OldFile))
+	sb.WriteString(fmt.Sprintf("+++ b/%s\n", result.NewFile))
+	
+	// Write each hunk
+	for _, hunk := range result.Hunks {
+		sb.WriteString(hunk.Header)
+		sb.WriteString("\n")
+		
+		for _, line := range hunk.Lines {
+			switch line.Kind {
+			case diff.LineAdded:
+				sb.WriteString("+")
+			case diff.LineRemoved:
+				sb.WriteString("-")
+			case diff.LineContext:
+				sb.WriteString(" ")
+			}
+			sb.WriteString(line.Content)
+			sb.WriteString("\n")
+		}
+	}
+	
+	return sb.String()
+}
+
 // applyCLIFlags applies command-line flag overrides to the loaded config
-func applyCLIFlags() {
+func applyCLIFlags(cmd *cobra.Command) {
 	// CLI flags override config file settings
 	if themeName != "" {
 		globalConfig.Core.Theme = themeName
@@ -371,6 +438,13 @@ func applyCLIFlags() {
 	}
 	if ignoreBlankLines {
 		globalConfig.Display.IgnoreBlankLines = ignoreBlankLines
+	}
+	// Feature flags - only override if explicitly set
+	if cmd.Flags().Changed("hyperlinks") {
+		globalConfig.Features.Hyperlinks = hyperlinks
+	}
+	if navigate {
+		globalConfig.Features.Navigate = navigate
 	}
 }
 
