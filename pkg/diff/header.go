@@ -9,7 +9,7 @@ import (
 )
 
 // RenderFileHeader renders a file header with status and statistics
-func RenderFileHeader(result DiffResult, showStats bool, hyperlinksEnabled bool) string {
+func RenderFileHeader(result DiffResult, showStats bool, hyperlinksEnabled bool, graphicalStats bool) string {
 	t := theme.CurrentTheme()
 	var sb strings.Builder
 
@@ -65,25 +65,87 @@ func RenderFileHeader(result DiffResult, showStats bool, hyperlinksEnabled bool)
 		if total > 0 {
 			sb.WriteString(" ")
 			
-			addedStyle := styles.NewStyle().Foreground(t.DiffAdded())
-			removedStyle := styles.NewStyle().Foreground(t.DiffRemoved())
-			mutedStyle := styles.NewStyle().Foreground(t.TextMuted())
+			if graphicalStats {
+				// Graphical representation with bars
+				sb.WriteString(renderGraphicalStats(added, removed, t))
+			} else {
+				// Text-only representation
+				addedStyle := styles.NewStyle().Foreground(t.DiffAdded())
+				removedStyle := styles.NewStyle().Foreground(t.DiffRemoved())
+				mutedStyle := styles.NewStyle().Foreground(t.TextMuted())
 
-			sb.WriteString(mutedStyle.Render("("))
-			if added > 0 {
-				sb.WriteString(addedStyle.Render(fmt.Sprintf("+%d", added)))
+				sb.WriteString(mutedStyle.Render("("))
+				if added > 0 {
+					sb.WriteString(addedStyle.Render(fmt.Sprintf("+%d", added)))
+				}
+				if added > 0 && removed > 0 {
+					sb.WriteString(mutedStyle.Render("/"))
+				}
+				if removed > 0 {
+					sb.WriteString(removedStyle.Render(fmt.Sprintf("-%d", removed)))
+				}
+				sb.WriteString(mutedStyle.Render(")"))
 			}
-			if added > 0 && removed > 0 {
-				sb.WriteString(mutedStyle.Render("/"))
-			}
-			if removed > 0 {
-				sb.WriteString(removedStyle.Render(fmt.Sprintf("-%d", removed)))
-			}
-			sb.WriteString(mutedStyle.Render(")"))
 		}
 	}
 
 	sb.WriteString("\n")
+	return sb.String()
+}
+
+// renderGraphicalStats renders statistics as a graphical bar
+func renderGraphicalStats(added, removed int, t theme.Theme) string {
+	total := added + removed
+	if total == 0 {
+		return ""
+	}
+	
+	var sb strings.Builder
+	mutedStyle := styles.NewStyle().Foreground(t.TextMuted())
+	addedStyle := styles.NewStyle().Foreground(t.DiffAdded())
+	removedStyle := styles.NewStyle().Foreground(t.DiffRemoved())
+	
+	// Calculate bar segments (max 10 chars total)
+	maxBarWidth := 10
+	addedBars := 0
+	removedBars := 0
+	
+	if total > 0 {
+		addedBars = (added * maxBarWidth) / total
+		removedBars = maxBarWidth - addedBars
+		
+		// Ensure at least one bar if there are changes
+		if added > 0 && addedBars == 0 {
+			addedBars = 1
+			removedBars--
+		}
+		if removed > 0 && removedBars == 0 {
+			removedBars = 1
+			addedBars--
+		}
+	}
+	
+	// Build the graphical representation
+	sb.WriteString(mutedStyle.Render("["))
+	if addedBars > 0 {
+		sb.WriteString(addedStyle.Render(strings.Repeat("=", addedBars)))
+	}
+	if removedBars > 0 {
+		sb.WriteString(removedStyle.Render(strings.Repeat("=", removedBars)))
+	}
+	// Pad to full width
+	remaining := maxBarWidth - addedBars - removedBars
+	if remaining > 0 {
+		sb.WriteString(mutedStyle.Render(strings.Repeat(" ", remaining)))
+	}
+	sb.WriteString(mutedStyle.Render("]"))
+	
+	// Add numeric stats
+	sb.WriteString(" ")
+	sb.WriteString(addedStyle.Render(fmt.Sprintf("+%d", added)))
+	sb.WriteString(" ")
+	sb.WriteString(removedStyle.Render(fmt.Sprintf("-%d", removed)))
+	
 	return sb.String()
 }
 

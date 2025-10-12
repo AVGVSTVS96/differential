@@ -27,6 +27,10 @@ func DefaultConfig() *Config {
 			KeepPlusMinusMarkers: false,
 			ShowFileHeaders:      true,
 			ShowStats:            true,
+			GraphicalStats:       false,
+			LineNumbersStyle:     "standard",
+			FileSeparator:        "none",
+			HunkSeparator:        "none",
 		},
 		Colors: ColorsConfig{
 			SyntaxTheme: "auto",

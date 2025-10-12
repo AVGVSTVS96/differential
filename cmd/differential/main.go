@@ -42,6 +42,12 @@ var (
 	hyperlinks bool
 	navigate   bool
 	
+	// Advanced styling flags
+	graphicalStats   bool
+	lineNumbersStyle string
+	fileSeparator    string
+	hunkSeparator    string
+	
 	// Global config (loaded from file + CLI flags)
 	globalConfig *config.Config
 )
@@ -85,6 +91,12 @@ func init() {
 	// Feature flags
 	rootCmd.Flags().BoolVar(&hyperlinks, "hyperlinks", false, "Enable clickable file path hyperlinks (auto-detected by default)")
 	rootCmd.Flags().BoolVar(&navigate, "navigate", false, "Enable navigation mode (not yet implemented)")
+	
+	// Advanced styling flags
+	rootCmd.Flags().BoolVar(&graphicalStats, "graphical-stats", false, "Show graphical statistics bars for file changes")
+	rootCmd.Flags().StringVar(&lineNumbersStyle, "line-numbers-style", "", "Line number style: standard, compact, minimal, left, right")
+	rootCmd.Flags().StringVar(&fileSeparator, "file-separator", "", "Separator between files: none, blank, line, double-line, dashed, dotted")
+	rootCmd.Flags().StringVar(&hunkSeparator, "hunk-separator", "", "Separator between hunks: none, blank, line, double-line, dashed, dotted")
 	
 	// Pager flags
 	rootCmd.Flags().BoolVar(&noPager, "no-pager", false, "Disable pager (output directly to stdout)")
@@ -183,9 +195,15 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		
 		sb.WriteString(output)
 		
-		// Add separator between files (except after last file)
+		// Add file separator if configured (except after last file)
 		if i < len(results)-1 {
-			sb.WriteString("\n")
+			sepStyle := diff.ParseSeparatorStyle(globalConfig.Display.FileSeparator)
+			if sepStyle != diff.SeparatorNone {
+				sb.WriteString(diff.RenderFileSeparator(sepStyle, globalConfig.Display.Width, theme.CurrentTheme()))
+			} else {
+				// Default to a blank line if no separator configured
+				sb.WriteString("\n")
+			}
 		}
 	}
 
@@ -445,6 +463,20 @@ func applyCLIFlags(cmd *cobra.Command) {
 	}
 	if navigate {
 		globalConfig.Features.Navigate = navigate
+	}
+	
+	// Advanced styling flags
+	if graphicalStats {
+		globalConfig.Display.GraphicalStats = graphicalStats
+	}
+	if lineNumbersStyle != "" {
+		globalConfig.Display.LineNumbersStyle = lineNumbersStyle
+	}
+	if fileSeparator != "" {
+		globalConfig.Display.FileSeparator = fileSeparator
+	}
+	if hunkSeparator != "" {
+		globalConfig.Display.HunkSeparator = hunkSeparator
 	}
 }
 

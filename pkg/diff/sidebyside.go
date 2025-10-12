@@ -138,11 +138,12 @@ func renderRightColumn(fileName string, dl *DiffLine, colWidth int, cfg *config.
 }
 
 // RenderSideBySideHunk formats a hunk for side-by-side display
-func RenderSideBySideHunk(fileName string, h Hunk, cfg *config.Config, opts ...UnifiedOption) string {
+func RenderSideBySideHunk(fileName string, h Hunk, cfg *config.Config, hunkIndex int, totalHunks int, opts ...UnifiedOption) string {
 	// Apply options to create the configuration
 	renderConfig := NewSideBySideConfig(opts...)
 
 	var sb strings.Builder
+	t := theme.CurrentTheme()
 
 	// Render hunk header first (spanning full width)
 	if h.Header != "" {
@@ -183,6 +184,14 @@ func RenderSideBySideHunk(fileName string, h Hunk, cfg *config.Config, opts ...U
 		return leftStr + rightStr + "\n"
 	})
 
+	// Add hunk separator if configured and not the last hunk
+	if cfg != nil && hunkIndex < totalHunks-1 {
+		sepStyle := ParseSeparatorStyle(cfg.Display.HunkSeparator)
+		if sepStyle != SeparatorNone {
+			sb.WriteString(RenderHunkSeparator(sepStyle, renderConfig.Width, t))
+		}
+	}
+
 	return sb.String()
 }
 
@@ -197,12 +206,13 @@ func FormatDiff(filename string, diffText string, cfg *config.Config, opts ...Un
 
 	// Add file header if enabled
 	if cfg != nil && cfg.Display.ShowFileHeaders {
-		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats, cfg.Features.Hyperlinks))
+		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats, cfg.Features.Hyperlinks, cfg.Display.GraphicalStats))
 	}
 
-	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
-		return RenderSideBySideHunk(filename, h, cfg, opts...)
-	})
+	totalHunks := len(diffResult.Hunks)
+	for i, h := range diffResult.Hunks {
+		sb.WriteString(RenderSideBySideHunk(filename, h, cfg, i, totalHunks, opts...))
+	}
 
 	return sb.String(), nil
 }

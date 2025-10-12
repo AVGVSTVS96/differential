@@ -47,8 +47,12 @@ type DisplayConfig struct {
 	IgnoreAllSpace       bool   `toml:"ignore-all-space"`
 	IgnoreSpaceChange    bool   `toml:"ignore-space-change"`
 	IgnoreBlankLines     bool   `toml:"ignore-blank-lines"`
-	ShowFileHeaders      bool   `toml:"show-file-headers"` // Show file status headers
-	ShowStats            bool   `toml:"show-stats"`        // Show diff statistics
+	ShowFileHeaders      bool   `toml:"show-file-headers"`  // Show file status headers
+	ShowStats            bool   `toml:"show-stats"`         // Show diff statistics
+	GraphicalStats       bool   `toml:"graphical-stats"`    // Show graphical statistics bars
+	LineNumbersStyle     string `toml:"line-numbers-style"` // Line number style: standard, compact, minimal
+	FileSeparator        string `toml:"file-separator"`     // Separator style between files
+	HunkSeparator        string `toml:"hunk-separator"`     // Separator style between hunks
 }
 
 // ColorsConfig contains color and syntax highlighting settings
