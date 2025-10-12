@@ -322,11 +322,67 @@ func (m *Model) findFirstHunkInFile(fileIndex int) int {
 }
 
 func (m *Model) scrollToCurrentHunk() {
-	// This would calculate the line offset for the current hunk
-	// and adjust scrollOffset to make it visible
-	// For now, just ensure we're within bounds
+	if m.currentHunk >= len(m.hunkIndex) {
+		return
+	}
+	
+	// Get the hunk metadata
+	hunkMeta := m.hunkIndex[m.currentHunk]
+	
+	// Find the line number where this hunk starts in renderedLines
+	// We need to count through all previous files and hunks
+	lineOffset := 0
+	
+	// Count lines from previous files
+	for i := 0; i < hunkMeta.FileIndex; i++ {
+		result := m.results[i]
+		
+		// File header (if enabled)
+		if m.cfg.Display.ShowFileHeaders {
+			lineOffset += 1 // Header is typically 1 line
+		}
+		
+		// All hunks in this file
+		for _, hunk := range result.Hunks {
+			lineOffset += 1 // Hunk header line
+			lineOffset += len(hunk.Lines)
+		}
+		
+		// File separator
+		if i < len(m.results)-1 {
+			lineOffset += 1
+		}
+	}
+	
+	// Add file header for current file
+	if m.cfg.Display.ShowFileHeaders {
+		lineOffset += 1
+	}
+	
+	// Count lines from previous hunks in current file
+	result := m.results[hunkMeta.FileIndex]
+	for i := 0; i < hunkMeta.HunkIndex; i++ {
+		if i < len(result.Hunks) {
+			lineOffset += 1 // Hunk header
+			lineOffset += len(result.Hunks[i].Lines)
+			
+			// Hunk separator (if not last hunk)
+			if i < len(result.Hunks)-1 {
+				lineOffset += 1
+			}
+		}
+	}
+	
+	// Scroll to show this hunk near the top (with some padding)
+	m.scrollOffset = lineOffset
+	
+	// Ensure we're within bounds
 	if m.scrollOffset < 0 {
 		m.scrollOffset = 0
+	}
+	maxOffset := len(m.renderedLines) - m.height + 2
+	if m.scrollOffset > maxOffset && maxOffset > 0 {
+		m.scrollOffset = maxOffset
 	}
 }
 
