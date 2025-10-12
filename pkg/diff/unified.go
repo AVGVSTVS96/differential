@@ -66,11 +66,12 @@ func renderUnifiedLine(fileName string, dl DiffLine, width int, t theme.Theme, c
 }
 
 // RenderUnifiedHunk formats a hunk for unified display
-func RenderUnifiedHunk(fileName string, h Hunk, cfg *config.Config, opts ...UnifiedOption) string {
+func RenderUnifiedHunk(fileName string, h Hunk, cfg *config.Config, hunkIndex int, totalHunks int, opts ...UnifiedOption) string {
 	// Apply options to create the configuration
 	renderConfig := NewUnifiedConfig(opts...)
 
 	var sb strings.Builder
+	t := theme.CurrentTheme()
 
 	// Render hunk header first
 	if h.Header != "" {
@@ -92,6 +93,14 @@ func RenderUnifiedHunk(fileName string, h Hunk, cfg *config.Config, opts ...Unif
 		return renderUnifiedLine(fileName, line, renderConfig.Width, theme.CurrentTheme(), cfg) + "\n"
 	})
 
+	// Add hunk separator if configured and not the last hunk
+	if cfg != nil && hunkIndex < totalHunks-1 {
+		sepStyle := ParseSeparatorStyle(cfg.Display.HunkSeparator)
+		if sepStyle != SeparatorNone {
+			sb.WriteString(RenderHunkSeparator(sepStyle, renderConfig.Width, t))
+		}
+	}
+
 	return sb.String()
 }
 
@@ -109,9 +118,10 @@ func FormatUnifiedDiff(filename string, diffText string, cfg *config.Config, opt
 		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats, cfg.Features.Hyperlinks, cfg.Display.GraphicalStats))
 	}
 
-	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
-		return RenderUnifiedHunk(filename, h, cfg, opts...)
-	})
+	totalHunks := len(diffResult.Hunks)
+	for i, h := range diffResult.Hunks {
+		sb.WriteString(RenderUnifiedHunk(filename, h, cfg, i, totalHunks, opts...))
+	}
 
 	return sb.String(), nil
 }
