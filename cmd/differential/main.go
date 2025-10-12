@@ -8,10 +8,13 @@ import (
 	"regexp"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/avgvstvs96/differential/pkg/config"
 	"github.com/avgvstvs96/differential/pkg/diff"
 	"github.com/avgvstvs96/differential/pkg/styles"
 	"github.com/avgvstvs96/differential/pkg/theme"
+	"github.com/avgvstvs96/differential/pkg/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -113,11 +116,6 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	// Apply CLI flag overrides
 	applyCLIFlags(cmd)
 	
-	// Show message if navigate mode is requested
-	if globalConfig.Features.Navigate {
-		fmt.Fprintln(os.Stderr, "Note: Interactive navigation mode is not yet implemented (planned for Phase 4B)")
-	}
-	
 	// Initialize themes
 	if err := theme.LoadThemesFromJSON(); err != nil {
 		return fmt.Errorf("failed to load themes: %w", err)
@@ -175,6 +173,11 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse diff: %w", err)
 	}
 
+	// Launch interactive TUI if navigate mode is enabled
+	if globalConfig.Features.Navigate {
+		return runInteractiveTUI(results, globalConfig)
+	}
+
 	// Render each file's diff
 	var sb strings.Builder
 	for i, result := range results {
@@ -223,6 +226,34 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Print(output)
 	}
+	return nil
+}
+
+// runInteractiveTUI launches the interactive TUI mode
+func runInteractiveTUI(results []diff.DiffResult, cfg *config.Config) error {
+	// Create the TUI model
+	model := tui.NewModel(results, cfg)
+	
+	// Create the Bubble Tea program
+	p := tea.NewProgram(
+		model,
+		tea.WithAltScreen(),       // Use alternate screen buffer
+		tea.WithMouseCellMotion(), // Enable mouse support
+	)
+	
+	// Run the program
+	finalModel, err := p.Run()
+	if err != nil {
+		return fmt.Errorf("TUI error: %w", err)
+	}
+	
+	// Check if there was an error in the model
+	if m, ok := finalModel.(tui.Model); ok {
+		if m.Err() != nil {
+			return m.Err()
+		}
+	}
+	
 	return nil
 }
 
