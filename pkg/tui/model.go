@@ -63,7 +63,7 @@ func NewModel(results []diff.DiffResult, cfg *config.Config) Model {
 		keymap:       DefaultKeyMap(),
 		searchMode:   false,
 		showHelp:     false,
-		showFileTree: true, // Show file tree by default
+		showFileTree: false, // Disable file tree by default until fixed
 		quitting:     false,
 	}
 }

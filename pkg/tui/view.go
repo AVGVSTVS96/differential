@@ -2,12 +2,25 @@ package tui
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/avgvstvs96/differential/pkg/diff"
 	"github.com/avgvstvs96/differential/pkg/styles"
 	"github.com/avgvstvs96/differential/pkg/theme"
 )
+
+var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+
+// stripANSI removes ANSI escape codes from a string
+func stripANSI(s string) string {
+	return ansiRegex.ReplaceAllString(s, "")
+}
+
+// visualWidth returns the visual width of a string (without ANSI codes)
+func visualWidth(s string) int {
+	return len(stripANSI(s))
+}
 
 // View renders the current view of the diff
 func (m Model) View() string {
@@ -64,66 +77,9 @@ func (m Model) renderFullView() string {
 
 // renderSplitView renders file tree + diff in split panel
 func (m Model) renderSplitView() string {
-	var sb strings.Builder
-	
-	// Calculate panel widths
-	treeWidth := m.width / 4 // 25% for tree
-	if treeWidth < 20 {
-		treeWidth = 20
-	}
-	if treeWidth > 40 {
-		treeWidth = 40
-	}
-	
-	diffWidth := m.width - treeWidth - 1 // -1 for separator
-	
-	// Build file tree
-	fileTree := BuildFileTree(m.results, m.currentFile)
-	treeLines := strings.Split(RenderFileTree(fileTree, treeWidth, m.height-1), "\n")
-	
-	// Calculate visible diff window
-	startLine := m.scrollOffset
-	endLine := m.scrollOffset + m.height - 2
-	
-	if endLine > len(m.renderedLines) {
-		endLine = len(m.renderedLines)
-	}
-	if startLine < 0 {
-		startLine = 0
-	}
-	
-	// Render lines side by side
-	for i := 0; i < m.height-1; i++ {
-		// File tree column
-		if i < len(treeLines) {
-			sb.WriteString(treeLines[i])
-		} else {
-			sb.WriteString(strings.Repeat(" ", treeWidth))
-		}
-		
-		// Separator
-		t := theme.CurrentTheme()
-		sepStyle := styles.NewStyle().Foreground(t.Border())
-		sb.WriteString(sepStyle.Render("│"))
-		
-		// Diff column
-		diffLineIdx := startLine + i
-		if diffLineIdx < len(m.renderedLines) {
-			diffLine := m.renderedLines[diffLineIdx]
-			// Truncate if too wide
-			if len(diffLine) > diffWidth {
-				diffLine = diffLine[:diffWidth]
-			}
-			sb.WriteString(diffLine)
-		}
-		
-		sb.WriteString("\n")
-	}
-	
-	// Add status line at bottom
-	sb.WriteString(m.renderStatusLine())
-	
-	return sb.String()
+	// For now, just show full view with a message that split view is disabled
+	// TODO: Fix split view rendering with proper ANSI handling
+	return m.renderFullView()
 }
 
 // renderAllContent renders all diff content to lines
