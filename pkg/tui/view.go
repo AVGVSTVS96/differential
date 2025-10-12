@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/avgvstvs96/differential/pkg/diff"
 	"github.com/avgvstvs96/differential/pkg/styles"
 	"github.com/avgvstvs96/differential/pkg/theme"
 )
@@ -30,11 +29,6 @@ func (m Model) View() string {
 	
 	if m.showHelp {
 		return m.renderHelp()
-	}
-	
-	// Render all diffs if not yet cached
-	if len(m.renderedLines) == 0 {
-		m.renderAllContent()
 	}
 	
 	// Show file tree in split panel if enabled
@@ -80,45 +74,6 @@ func (m Model) renderSplitView() string {
 	// For now, just show full view with a message that split view is disabled
 	// TODO: Fix split view rendering with proper ANSI handling
 	return m.renderFullView()
-}
-
-// renderAllContent renders all diff content to lines
-func (m *Model) renderAllContent() {
-	var sb strings.Builder
-	
-	for i, result := range m.results {
-		// Render file header
-		if m.cfg.Display.ShowFileHeaders {
-			header := diff.RenderFileHeader(result, m.cfg.Display.ShowStats, m.cfg.Features.Hyperlinks, m.cfg.Display.GraphicalStats)
-			sb.WriteString(header)
-		}
-		
-		// Render each hunk
-		for j, hunk := range result.Hunks {
-			totalHunks := len(result.Hunks)
-			
-			var hunkOutput string
-			if m.cfg.Core.SideBySide {
-				hunkOutput = diff.RenderSideBySideHunk("", hunk, m.cfg, j, totalHunks, diff.WithWidth(m.width))
-			} else {
-				hunkOutput = diff.RenderUnifiedHunk("", hunk, m.cfg, j, totalHunks, diff.WithWidth(m.width))
-			}
-			sb.WriteString(hunkOutput)
-		}
-		
-		// Add file separator if not last file
-		if i < len(m.results)-1 {
-			sepStyle := diff.ParseSeparatorStyle(m.cfg.Display.FileSeparator)
-			if sepStyle != diff.SeparatorNone {
-				sb.WriteString(diff.RenderFileSeparator(sepStyle, m.width, theme.CurrentTheme()))
-			} else {
-				sb.WriteString("\n")
-			}
-		}
-	}
-	
-	// Split into lines for scrolling
-	m.renderedLines = strings.Split(sb.String(), "\n")
 }
 
 // findGlobalHunkIndex finds the global index for a file/hunk combination

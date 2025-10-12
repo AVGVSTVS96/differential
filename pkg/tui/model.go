@@ -8,6 +8,7 @@ import (
 
 	"github.com/avgvstvs96/differential/pkg/config"
 	"github.com/avgvstvs96/differential/pkg/diff"
+	"github.com/avgvstvs96/differential/pkg/theme"
 )
 
 // Model represents the TUI state
@@ -69,12 +70,54 @@ func NewModel(results []diff.DiffResult, cfg *config.Config) Model {
 }
 
 // Init initializes the model (required by Bubble Tea)
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
+	// Pre-render all content on initialization
+	m.renderAllContent()
 	return nil
 }
 
+// renderAllContent renders all diff content to lines
+func (m *Model) renderAllContent() {
+	// Import necessary packages for rendering
+	var sb strings.Builder
+	
+	for i, result := range m.results {
+		// Render file header
+		if m.cfg.Display.ShowFileHeaders {
+			header := diff.RenderFileHeader(result, m.cfg.Display.ShowStats, m.cfg.Features.Hyperlinks, m.cfg.Display.GraphicalStats)
+			sb.WriteString(header)
+		}
+		
+		// Render each hunk
+		for j, hunk := range result.Hunks {
+			totalHunks := len(result.Hunks)
+			
+			var hunkOutput string
+			if m.cfg.Core.SideBySide {
+				hunkOutput = diff.RenderSideBySideHunk("", hunk, m.cfg, j, totalHunks, diff.WithWidth(m.width))
+			} else {
+				hunkOutput = diff.RenderUnifiedHunk("", hunk, m.cfg, j, totalHunks, diff.WithWidth(m.width))
+			}
+			sb.WriteString(hunkOutput)
+		}
+		
+		// Add file separator if not last file
+		if i < len(m.results)-1 {
+			sepStyle := diff.ParseSeparatorStyle(m.cfg.Display.FileSeparator)
+			if sepStyle != diff.SeparatorNone {
+				sb.WriteString(diff.RenderFileSeparator(sepStyle, m.width, theme.CurrentTheme()))
+			} else {
+				sb.WriteString("\n")
+			}
+		}
+	}
+	
+	// Split into lines for scrolling
+	m.renderedLines = strings.Split(sb.String(), "\n")
+}
+
 // Update handles messages and updates the model
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		// Handle search mode separately
@@ -153,7 +196,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // updateSearch handles search mode input
-func (m Model) updateSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *Model) updateSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "ctrl+c":
 		m.searchMode = false

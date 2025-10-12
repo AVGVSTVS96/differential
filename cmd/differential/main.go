@@ -236,7 +236,7 @@ func runInteractiveTUI(results []diff.DiffResult, cfg *config.Config) error {
 	
 	// Create the Bubble Tea program
 	p := tea.NewProgram(
-		model,
+		&model, // Pass pointer since methods use pointer receivers
 		tea.WithAltScreen(),       // Use alternate screen buffer
 		tea.WithMouseCellMotion(), // Enable mouse support
 	)
@@ -248,7 +248,7 @@ func runInteractiveTUI(results []diff.DiffResult, cfg *config.Config) error {
 	}
 	
 	// Check if there was an error in the model
-	if m, ok := finalModel.(tui.Model); ok {
+	if m, ok := finalModel.(*tui.Model); ok {
 		if m.Err() != nil {
 			return m.Err()
 		}
