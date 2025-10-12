@@ -95,6 +95,12 @@ func FormatUnifiedDiff(filename string, diffText string, cfg *config.Config, opt
 	}
 
 	var sb strings.Builder
+
+	// Add file header if enabled
+	if cfg != nil && cfg.Display.ShowFileHeaders {
+		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats))
+	}
+
 	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
 		return RenderUnifiedHunk(filename, h, cfg, opts...)
 	})

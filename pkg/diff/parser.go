@@ -22,10 +22,25 @@ func ParseUnifiedDiff(diff string) (DiffResult, error) {
 		if inFileHeader {
 			if strings.HasPrefix(line, "--- a/") {
 				result.OldFile = line[6:]
+				result.Metadata.OldPath = result.OldFile
+				continue
+			}
+			if strings.HasPrefix(line, "--- /dev/null") {
+				result.OldFile = "/dev/null"
+				result.Metadata.OldPath = "/dev/null"
+				result.Metadata.Status = FileAdded
 				continue
 			}
 			if strings.HasPrefix(line, "+++ b/") {
 				result.NewFile = line[6:]
+				result.Metadata.NewPath = result.NewFile
+				inFileHeader = false
+				continue
+			}
+			if strings.HasPrefix(line, "+++ /dev/null") {
+				result.NewFile = "/dev/null"
+				result.Metadata.NewPath = "/dev/null"
+				result.Metadata.Status = FileDeleted
 				inFileHeader = false
 				continue
 			}
@@ -64,11 +79,13 @@ func ParseUnifiedDiff(diff string) (DiffResult, error) {
 				dl.NewLineNo = newLine
 				dl.Content = line[1:]
 				newLine++
+				result.Metadata.LinesAdded++
 			case '-':
 				dl.Kind = LineRemoved
 				dl.OldLineNo = oldLine
 				dl.Content = line[1:]
 				oldLine++
+				result.Metadata.LinesRemoved++
 			default: // context line
 				dl.Kind = LineContext
 				dl.OldLineNo = oldLine
@@ -88,6 +105,19 @@ func ParseUnifiedDiff(diff string) (DiffResult, error) {
 
 	if currentHunk != nil {
 		result.Hunks = append(result.Hunks, *currentHunk)
+	}
+
+	// Determine file status if not already set
+	if result.Metadata.Status == 0 {
+		if result.OldFile == "/dev/null" {
+			result.Metadata.Status = FileAdded
+		} else if result.NewFile == "/dev/null" {
+			result.Metadata.Status = FileDeleted
+		} else if result.OldFile != result.NewFile {
+			result.Metadata.Status = FileRenamed
+		} else {
+			result.Metadata.Status = FileModified
+		}
 	}
 
 	return result, scanner.Err()

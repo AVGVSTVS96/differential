@@ -46,6 +46,8 @@ type DisplayConfig struct {
 	IgnoreAllSpace       bool   `toml:"ignore-all-space"`
 	IgnoreSpaceChange    bool   `toml:"ignore-space-change"`
 	IgnoreBlankLines     bool   `toml:"ignore-blank-lines"`
+	ShowFileHeaders      bool   `toml:"show-file-headers"` // Show file status headers
+	ShowStats            bool   `toml:"show-stats"`        // Show diff statistics
 }
 
 // ColorsConfig contains color and syntax highlighting settings

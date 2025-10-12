@@ -186,6 +186,12 @@ func FormatDiff(filename string, diffText string, cfg *config.Config, opts ...Un
 	}
 
 	var sb strings.Builder
+
+	// Add file header if enabled
+	if cfg != nil && cfg.Display.ShowFileHeaders {
+		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats))
+	}
+
 	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {
 		return RenderSideBySideHunk(filename, h, cfg, opts...)
 	})

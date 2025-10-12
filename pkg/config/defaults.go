@@ -16,15 +16,17 @@ func DefaultConfig() *Config {
 			NoPager:     false,
 		},
 		Display: DisplayConfig{
-			Width:              0, // auto-detect
-			Tabs:               4,
-			MaxLineLength:      3000,
-			Unified:            3, // default context lines
-			WrapMaxLines:       "2",
-			WrapLeftSymbol:     "↵",
-			WrapRightSymbol:    "↵",
-			RelativePaths:      false,
+			Width:                0, // auto-detect
+			Tabs:                 4,
+			MaxLineLength:        3000,
+			Unified:              3, // default context lines
+			WrapMaxLines:         "2",
+			WrapLeftSymbol:       "↵",
+			WrapRightSymbol:      "↵",
+			RelativePaths:        false,
 			KeepPlusMinusMarkers: false,
+			ShowFileHeaders:      true,
+			ShowStats:            true,
 		},
 		Colors: ColorsConfig{
 			SyntaxTheme: "auto",

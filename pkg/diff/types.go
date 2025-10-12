@@ -44,11 +44,50 @@ type Hunk struct {
 	Lines  []DiffLine
 }
 
+// FileStatus represents the modification status of a file
+type FileStatus int
+
+const (
+	FileModified FileStatus = iota // File was modified
+	FileAdded                       // File was added
+	FileDeleted                     // File was deleted
+	FileRenamed                     // File was renamed
+	FileCopied                      // File was copied
+)
+
+// String returns the short string representation of file status
+func (fs FileStatus) String() string {
+	switch fs {
+	case FileModified:
+		return "M"
+	case FileAdded:
+		return "A"
+	case FileDeleted:
+		return "D"
+	case FileRenamed:
+		return "R"
+	case FileCopied:
+		return "C"
+	default:
+		return "?"
+	}
+}
+
+// FileMetadata contains metadata about a file in a diff
+type FileMetadata struct {
+	OldPath    string     // Path in old version
+	NewPath    string     // Path in new version
+	Status     FileStatus // File modification status
+	LinesAdded int        // Number of lines added
+	LinesRemoved int      // Number of lines removed
+}
+
 // DiffResult contains the parsed result of a diff
 type DiffResult struct {
-	OldFile string
-	NewFile string
-	Hunks   []Hunk
+	OldFile  string
+	NewFile  string
+	Metadata FileMetadata // File metadata
+	Hunks    []Hunk
 }
 
 // linePair represents a pair of lines for side-by-side display
