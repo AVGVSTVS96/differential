@@ -1,3 +1,18 @@
+// Package config provides configuration management for differential.
+//
+// Configuration is loaded from multiple sources with the following precedence:
+//   1. Built-in defaults (lowest priority)
+//   2. Git config ([differential] and [delta] sections)
+//   3. TOML config file (~/.config/differential/config.toml)
+//   4. Custom config file (via --config flag)
+//   5. CLI flags (highest priority)
+//
+// Usage:
+//   cfg, err := config.Load(customPath, disableGitConfig)
+//   if err != nil { ... }
+//
+// The package supports full delta compatibility by reading [delta] sections
+// from git config, making differential a drop-in replacement.
 package config
 
 // Config represents the complete configuration for differential

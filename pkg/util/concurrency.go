@@ -1,3 +1,7 @@
+// Package util provides utility functions for differential.
+//
+// Currently provides parallel string processing utilities used
+// for rendering diff lines and hunks concurrently.
 package util
 
 import (

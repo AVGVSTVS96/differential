@@ -1,4 +1,15 @@
-package diff
+// Package textutil provides text processing utilities for diff rendering.
+//
+// This package contains generic text manipulation functions including:
+//   - Tab expansion with proper column alignment (ExpandTabs)
+//   - Line truncation with ellipsis (TruncateWithEllipsis)
+//   - Whitespace normalization and detection
+//   - Wide character support (CJK, emojis)
+//   - ANSI-aware text operations
+//
+// These utilities are used by the diff package but are generic enough
+// to be used independently.
+package textutil
 
 import (
 	"strings"
