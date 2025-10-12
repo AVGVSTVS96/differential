@@ -5,7 +5,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 
+	"github.com/avgvstvs96/differential/pkg/config"
 	"github.com/avgvstvs96/differential/pkg/diff"
 	"github.com/avgvstvs96/differential/pkg/styles"
 	"github.com/avgvstvs96/differential/pkg/theme"
@@ -13,12 +15,30 @@ import (
 )
 
 var (
-	version    = "0.2.0"
-	themeName  string
-	sideBySide bool
-	width      int
-	listThemes bool
-	noPager    bool
+	version    = "0.3.0"
+	
+	// Config flags
+	configFile     string
+	noGitConfig    bool
+	
+	// Display flags
+	themeName           string
+	sideBySide          bool
+	width               int
+	listThemes          bool
+	noPager             bool
+	unified             int
+	tabs                int
+	colorMode           string
+	lineNumbers         bool
+	relativePaths       bool
+	keepPlusMinusMakers bool
+	ignoreAllSpace      bool
+	ignoreSpaceChange   bool
+	ignoreBlankLines    bool
+	
+	// Global config (loaded from file + CLI flags)
+	globalConfig *config.Config
 )
 
 var rootCmd = &cobra.Command{
@@ -34,14 +54,44 @@ It can be used as a drop-in replacement for git diff:
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&themeName, "theme", "t", "opencode", "Color theme to use")
+	// Config flags
+	rootCmd.Flags().StringVar(&configFile, "config", "", "Load config file at PATH instead of default")
+	rootCmd.Flags().BoolVar(&noGitConfig, "no-gitconfig", false, "Do not read any settings from git config")
+	
+	// Core flags
+	rootCmd.Flags().StringVarP(&themeName, "theme", "t", "", "Color theme to use")
 	rootCmd.Flags().BoolVarP(&sideBySide, "side-by-side", "s", false, "Show diff in side-by-side view")
-	rootCmd.Flags().IntVarP(&width, "width", "w", 0, "Terminal width (auto-detect if 0)")
 	rootCmd.Flags().BoolVar(&listThemes, "list-themes", false, "List available themes")
+	rootCmd.Flags().BoolVarP(&lineNumbers, "line-numbers", "n", false, "Display line numbers next to the diff")
+	
+	// Display flags
+	rootCmd.Flags().IntVarP(&width, "width", "w", 0, "Terminal width (auto-detect if 0)")
+	rootCmd.Flags().IntVarP(&unified, "unified", "U", 0, "Number of context lines (default: 3)")
+	rootCmd.Flags().IntVar(&tabs, "tabs", 0, "Number of spaces to replace tab characters with (default: 4)")
+	rootCmd.Flags().StringVar(&colorMode, "color", "", "When to use colors: auto, always, never (default: auto)")
+	rootCmd.Flags().BoolVar(&relativePaths, "relative-paths", false, "Output file paths relative to current directory")
+	rootCmd.Flags().BoolVar(&keepPlusMinusMakers, "keep-plus-minus-markers", false, "Prefix added/removed lines with +/- characters")
+	
+	// Whitespace flags (no short flags to avoid conflicts)
+	rootCmd.Flags().BoolVar(&ignoreAllSpace, "ignore-all-space", false, "Ignore all white space")
+	rootCmd.Flags().BoolVar(&ignoreSpaceChange, "ignore-space-change", false, "Ignore changes in amount of white space")
+	rootCmd.Flags().BoolVar(&ignoreBlankLines, "ignore-blank-lines", false, "Ignore changes whose lines are all blank")
+	
+	// Pager flags
 	rootCmd.Flags().BoolVar(&noPager, "no-pager", false, "Disable pager (output directly to stdout)")
 }
 
 func runDiff(cmd *cobra.Command, args []string) error {
+	// Load configuration
+	var err error
+	globalConfig, err = config.Load(configFile, noGitConfig)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+	
+	// Apply CLI flag overrides
+	applyCLIFlags()
+	
 	// Initialize themes
 	if err := theme.LoadThemesFromJSON(); err != nil {
 		return fmt.Errorf("failed to load themes: %w", err)
@@ -58,8 +108,8 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Set theme
-	if err := theme.SetTheme(themeName); err != nil {
-		return fmt.Errorf("invalid theme %q: %w", themeName, err)
+	if err := theme.SetTheme(globalConfig.Core.Theme); err != nil {
+		return fmt.Errorf("invalid theme %q: %w", globalConfig.Core.Theme, err)
 	}
 
 	// Detect terminal info
@@ -68,13 +118,12 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	styles.Terminal.BackgroundIsDark = termInfo.BackgroundIsDark
 
 	// Auto-detect width if not specified
-	if width == 0 {
-		width = getTerminalWidth()
+	if globalConfig.Display.Width == 0 {
+		globalConfig.Display.Width = getTerminalWidth()
 	}
 
 	// Get diff input
 	var diffText string
-	var err error
 
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -86,7 +135,7 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		diffText = string(data)
 	} else if len(args) == 2 {
 		// Compare two files
-		diffText, err = runGitDiff(args[0], args[1])
+		diffText, err = runGitDiff(args[0], args[1], globalConfig)
 		if err != nil {
 			return err
 		}
@@ -96,15 +145,20 @@ func runDiff(cmd *cobra.Command, args []string) error {
 
 	// Render diff
 	var output string
-	if sideBySide {
-		output, err = diff.FormatDiff("", diffText, diff.WithWidth(width))
+	if globalConfig.Core.SideBySide {
+		output, err = diff.FormatDiff("", diffText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
 	} else {
-		output, err = diff.FormatUnifiedDiff("", diffText, diff.WithWidth(width))
+		output, err = diff.FormatUnifiedDiff("", diffText, globalConfig, diff.WithWidth(globalConfig.Display.Width))
 	}
 	if err != nil {
 		return fmt.Errorf("failed to render diff: %w", err)
 	}
 
+	// Strip ANSI codes if color mode is never
+	if globalConfig.Colors.ColorMode == "never" {
+		output = stripANSI(output)
+	}
+	
 	// Output the result (with pager if appropriate)
 	if shouldUsePager() {
 		if err := showWithPager(output); err != nil {
@@ -117,8 +171,27 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runGitDiff(file1, file2 string) (string, error) {
-	cmd := exec.Command("diff", "-u", file1, file2)
+func runGitDiff(file1, file2 string, cfg *config.Config) (string, error) {
+	args := []string{"-u"}
+	
+	// Context lines
+	if cfg.Display.Unified > 0 {
+		args = append(args, fmt.Sprintf("-U%d", cfg.Display.Unified))
+	}
+	
+	// Whitespace handling
+	if cfg.Display.IgnoreAllSpace {
+		args = append(args, "-w")
+	}
+	if cfg.Display.IgnoreSpaceChange {
+		args = append(args, "-b")
+	}
+	if cfg.Display.IgnoreBlankLines {
+		args = append(args, "-B")
+	}
+	
+	args = append(args, file1, file2)
+	cmd := exec.Command("diff", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		// diff returns exit code 1 when files differ, which is normal
@@ -169,7 +242,12 @@ func getTerminalWidth() int {
 // shouldUsePager determines if output should be piped through a pager
 func shouldUsePager() bool {
 	// Don't use pager if explicitly disabled
-	if noPager {
+	if globalConfig.Core.NoPager {
+		return false
+	}
+	
+	// Force no pager if color mode is never (usually means piping to file)
+	if globalConfig.Colors.ColorMode == "never" {
 		return false
 	}
 
@@ -187,9 +265,11 @@ func shouldUsePager() bool {
 
 // showWithPager pipes output through a pager like less
 func showWithPager(content string) error {
-	// Check for pager preference in environment variables
-	// Order: DIFFERENTIAL_PAGER, BAT_PAGER, PAGER, then default to "less"
-	pagerCmd := os.Getenv("DIFFERENTIAL_PAGER")
+	// Check for pager preference (config, then env vars)
+	pagerCmd := globalConfig.Core.Pager
+	if pagerCmd == "" {
+		pagerCmd = os.Getenv("DIFFERENTIAL_PAGER")
+	}
 	if pagerCmd == "" {
 		pagerCmd = os.Getenv("BAT_PAGER")
 	}
@@ -248,6 +328,57 @@ func showWithPager(content string) error {
 
 	// Wait for pager to finish
 	return cmd.Wait()
+}
+
+// applyCLIFlags applies command-line flag overrides to the loaded config
+func applyCLIFlags() {
+	// CLI flags override config file settings
+	if themeName != "" {
+		globalConfig.Core.Theme = themeName
+	}
+	if sideBySide {
+		globalConfig.Core.SideBySide = sideBySide
+	}
+	if width != 0 {
+		globalConfig.Display.Width = width
+	}
+	if noPager {
+		globalConfig.Core.NoPager = noPager
+	}
+	if unified != 0 {
+		globalConfig.Display.Unified = unified
+	}
+	if tabs != 0 {
+		globalConfig.Display.Tabs = tabs
+	}
+	if colorMode != "" {
+		globalConfig.Colors.ColorMode = colorMode
+	}
+	if lineNumbers {
+		globalConfig.Core.LineNumbers = lineNumbers
+	}
+	if relativePaths {
+		globalConfig.Display.RelativePaths = relativePaths
+	}
+	if keepPlusMinusMakers {
+		globalConfig.Display.KeepPlusMinusMarkers = keepPlusMinusMakers
+	}
+	if ignoreAllSpace {
+		globalConfig.Display.IgnoreAllSpace = ignoreAllSpace
+	}
+	if ignoreSpaceChange {
+		globalConfig.Display.IgnoreSpaceChange = ignoreSpaceChange
+	}
+	if ignoreBlankLines {
+		globalConfig.Display.IgnoreBlankLines = ignoreBlankLines
+	}
+}
+
+// stripANSI removes ANSI escape sequences from a string
+func stripANSI(s string) string {
+	// Match ANSI escape sequences
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+	return ansiRegex.ReplaceAllString(s, "")
 }
 
 func main() {

@@ -1,3 +1,19 @@
+// Package theme provides color theme management for differential.
+//
+// This package handles:
+//   - Loading themes from JSON files (22 built-in themes)
+//   - Theme registration and lookup
+//   - Terminal background detection (dark/light)
+//   - Chroma syntax highlighting style generation
+//   - Delta compatibility with theme mappings
+//
+// Themes include colors for diff elements (added, removed, context),
+// syntax highlighting, UI elements, and line numbers.
+//
+// Usage:
+//   theme.LoadThemesFromJSON()
+//   theme.SetTheme("dracula")
+//   currentTheme := theme.CurrentTheme()
 package theme
 
 import (

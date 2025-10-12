@@ -1,3 +1,8 @@
+// Package styles provides terminal styling wrappers around lipgloss.
+//
+// This package provides a consistent interface for styling terminal output,
+// including support for adaptive colors (dark/light terminal backgrounds)
+// and terminal capability detection.
 package styles
 
 import (
