@@ -122,3 +122,61 @@ func ParseUnifiedDiff(diff string) (DiffResult, error) {
 
 	return result, scanner.Err()
 }
+
+// ParseMultiFileDiff parses a diff containing multiple files
+func ParseMultiFileDiff(diff string) ([]DiffResult, error) {
+	if diff == "" {
+		return []DiffResult{}, nil
+	}
+
+	// Split on "diff --git" markers
+	// This handles git-style diffs with multiple files
+	parts := strings.Split(diff, "\ndiff --git ")
+	
+	var results []DiffResult
+	
+	for i, part := range parts {
+		// Skip empty parts
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		
+		// Re-add the "diff --git" prefix for parts after the first
+		if i > 0 {
+			part = "diff --git " + part
+		}
+		
+		// Find the start of the actual unified diff (--- line)
+		lines := strings.Split(part, "\n")
+		var diffStart int
+		for idx, line := range lines {
+			if strings.HasPrefix(line, "---") {
+				diffStart = idx
+				break
+			}
+		}
+		
+		// If we found a unified diff section, parse it
+		if diffStart > 0 || strings.HasPrefix(lines[0], "---") {
+			unifiedDiff := strings.Join(lines[diffStart:], "\n")
+			result, err := ParseUnifiedDiff(unifiedDiff)
+			if err != nil {
+				// Log error but continue with other files
+				continue
+			}
+			results = append(results, result)
+		}
+	}
+	
+	// If no "diff --git" markers found, try parsing as single file
+	if len(results) == 0 {
+		result, err := ParseUnifiedDiff(diff)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	
+	return results, nil
+}

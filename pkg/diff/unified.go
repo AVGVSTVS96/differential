@@ -70,6 +70,15 @@ func RenderUnifiedHunk(fileName string, h Hunk, cfg *config.Config, opts ...Unif
 	// Apply options to create the configuration
 	renderConfig := NewUnifiedConfig(opts...)
 
+	var sb strings.Builder
+
+	// Render hunk header first
+	if h.Header != "" {
+		header := RenderHunkHeader(h, cfg, renderConfig.Width)
+		sb.WriteString(header)
+		sb.WriteString("\n")
+	}
+
 	// Make a copy of the hunk so we don't modify the original
 	hunkCopy := Hunk{Lines: make([]DiffLine, len(h.Lines))}
 	copy(hunkCopy.Lines, h.Lines)
@@ -77,7 +86,6 @@ func RenderUnifiedHunk(fileName string, h Hunk, cfg *config.Config, opts ...Unif
 	// Highlight changes within lines
 	HighlightIntralineChanges(&hunkCopy)
 
-	var sb strings.Builder
 	sb.Grow(len(hunkCopy.Lines) * renderConfig.Width)
 
 	util.WriteStringsPar(&sb, hunkCopy.Lines, func(line DiffLine) string {
@@ -98,7 +106,7 @@ func FormatUnifiedDiff(filename string, diffText string, cfg *config.Config, opt
 
 	// Add file header if enabled
 	if cfg != nil && cfg.Display.ShowFileHeaders {
-		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats))
+		sb.WriteString(RenderFileHeader(diffResult, cfg.Display.ShowStats, cfg.Features.Hyperlinks))
 	}
 
 	util.WriteStringsPar(&sb, diffResult.Hunks, func(h Hunk) string {

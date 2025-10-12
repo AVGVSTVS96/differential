@@ -9,7 +9,7 @@ import (
 )
 
 // RenderFileHeader renders a file header with status and statistics
-func RenderFileHeader(result DiffResult, showStats bool) string {
+func RenderFileHeader(result DiffResult, showStats bool, hyperlinksEnabled bool) string {
 	t := theme.CurrentTheme()
 	var sb strings.Builder
 
@@ -34,12 +34,19 @@ func RenderFileHeader(result DiffResult, showStats bool) string {
 	if result.Metadata.Status == FileDeleted {
 		filePath = result.OldFile
 	}
+	
+	// Apply hyperlink if enabled
+	displayPath := filePath
+	if hyperlinksEnabled {
+		displayPath = CreateFileHyperlink(filePath, filePath, true)
+	}
+	
 	filePathStyle := styles.NewStyle().Foreground(t.Text()).Bold(true)
 
 	// Build header line
 	sb.WriteString(statusStyle.Render(fmt.Sprintf("[%s]", status)))
 	sb.WriteString(" ")
-	sb.WriteString(filePathStyle.Render(filePath))
+	sb.WriteString(filePathStyle.Render(displayPath))
 
 	// Add rename information if applicable
 	if result.Metadata.Status == FileRenamed && result.OldFile != result.NewFile {
