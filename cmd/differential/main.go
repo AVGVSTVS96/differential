@@ -93,7 +93,7 @@ func init() {
 	
 	// Feature flags
 	rootCmd.Flags().BoolVar(&hyperlinks, "hyperlinks", false, "Enable clickable file path hyperlinks (auto-detected by default)")
-	rootCmd.Flags().BoolVar(&navigate, "navigate", false, "Enable navigation mode (not yet implemented)")
+	rootCmd.Flags().BoolVar(&navigate, "navigate", false, "Enable interactive navigation mode with file tree")
 	
 	// Advanced styling flags
 	rootCmd.Flags().BoolVar(&graphicalStats, "graphical-stats", false, "Show graphical statistics bars for file changes")
