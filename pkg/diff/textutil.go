@@ -9,13 +9,14 @@ import (
 )
 
 // ExpandTabs replaces tab characters with spaces
+// Properly accounts for wide characters (CJK, emojis) that occupy 2 columns
 func ExpandTabs(s string, tabWidth int) string {
 	if tabWidth == 0 || !strings.Contains(s, "\t") {
 		return s
 	}
 
 	var result strings.Builder
-	result.Grow(len(s))
+	result.Grow(len(s) * 2) // Conservative estimate for wide chars
 	col := 0
 
 	for _, r := range s {
@@ -26,7 +27,23 @@ func ExpandTabs(s string, tabWidth int) string {
 			col += spaces
 		} else {
 			result.WriteRune(r)
-			col++
+			// Account for wide characters (CJK, emojis, etc.)
+			// Simple heuristic: Unicode >= 0x1100 is typically wide
+			// For more accuracy, consider using github.com/mattn/go-runewidth
+			if r >= 0x1100 && (r <= 0x115F || // Hangul Jamo
+				r >= 0x2E80 && r <= 0x9FFF || // CJK
+				r >= 0xAC00 && r <= 0xD7A3 || // Hangul Syllables
+				r >= 0xF900 && r <= 0xFAFF || // CJK Compatibility
+				r >= 0xFE10 && r <= 0xFE19 || // Vertical forms
+				r >= 0xFE30 && r <= 0xFE6F || // CJK Compatibility Forms
+				r >= 0xFF00 && r <= 0xFF60 || // Fullwidth Forms
+				r >= 0xFFE0 && r <= 0xFFE6 || // Fullwidth Forms
+				r >= 0x1F300 && r <= 0x1F64F || // Emoticons
+				r >= 0x1F680 && r <= 0x1F6FF) { // Transport symbols
+				col += 2
+			} else {
+				col++
+			}
 		}
 	}
 
@@ -198,8 +215,11 @@ func NormalizeWhitespace(s string, mode string) string {
 	}
 }
 
-// SplitPreservingANSI splits a string while preserving ANSI sequences
-func SplitPreservingANSI(s string, maxWidth int) []string {
+// SplitByWidth splits a string by display width
+// TODO: This function does not currently preserve ANSI escape sequences during splitting.
+// ANSI sequences may be split mid-code, which could break formatting. For now, this is
+// a simple width-based split. Future enhancement should use proper ANSI-aware splitting.
+func SplitByWidth(s string, maxWidth int) []string {
 	if maxWidth <= 0 {
 		return []string{s}
 	}
@@ -209,16 +229,22 @@ func SplitPreservingANSI(s string, maxWidth int) []string {
 		return []string{s}
 	}
 
-	// Simple split for now - full ANSI-aware splitting is complex
+	// Simple split by width - does not preserve ANSI sequences
 	var lines []string
 	currentLine := ""
 	currentWidth := 0
 
 	for i := 0; i < len(s); {
 		r, size := utf8.DecodeRuneInString(s[i:])
+		
+		// Calculate display width for this rune
 		runeWidth := 1
 		if r == '\t' {
-			runeWidth = 4 // Assume tab width of 4
+			runeWidth = 4 // Tab width assumption
+		} else if r >= 0x1100 {
+			// Approximate wide character detection (CJK, emojis, etc.)
+			// For more accuracy, consider using github.com/mattn/go-runewidth
+			runeWidth = 2
 		}
 
 		if currentWidth+runeWidth > maxWidth {

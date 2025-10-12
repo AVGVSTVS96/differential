@@ -129,13 +129,21 @@ func (l *Loader) applyGitConfigValue(key, value string) {
 		
 	// Display settings
 	case "width":
-		l.config.Display.Width = parseInt(value)
+		if v, err := parseInt(value); err == nil {
+			l.config.Display.Width = v
+		}
 	case "tabs":
-		l.config.Display.Tabs = parseInt(value)
+		if v, err := parseInt(value); err == nil {
+			l.config.Display.Tabs = v
+		}
 	case "max-line-length":
-		l.config.Display.MaxLineLength = parseInt(value)
+		if v, err := parseInt(value); err == nil {
+			l.config.Display.MaxLineLength = v
+		}
 	case "unified":
-		l.config.Display.Unified = parseInt(value)
+		if v, err := parseInt(value); err == nil {
+			l.config.Display.Unified = v
+		}
 	case "wrap-max-lines":
 		l.config.Display.WrapMaxLines = value
 	case "wrap-left-symbol":
@@ -187,14 +195,31 @@ func parseBool(s string) bool {
 	return s == "true" || s == "yes" || s == "on" || s == "1"
 }
 
-// parseInt parses a git config integer value
-func parseInt(s string) int {
-	i, _ := strconv.Atoi(s)
-	return i
+// parseInt parses a git config integer value, returning 0 if invalid
+// Returns the parsed integer and an error if parsing fails
+func parseInt(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, fmt.Errorf("invalid integer value %q: %w", s, err)
+	}
+	return i, nil
 }
 
 // mergeConfig merges a loaded config into the current config
 // Non-zero/non-empty values from src override defaults in dst
+// 
+// Note: This implementation treats zero values (false, 0, "") as "not set" which means
+// explicit false/0 values in TOML config files cannot override true/non-zero defaults.
+// This is acceptable for current use cases since:
+// - Git config values are parsed from strings, so "false" becomes parseBool(false) 
+// - TOML unmarshalling only sets fields that are explicitly present
+// - Default config typically uses false/0 for most options
+// 
+// If future use cases require distinguishing "not set" from "explicitly false/0",
+// consider using pointer types (*bool, *int) or a separate "set" tracking mechanism.
 func (l *Loader) mergeConfig(src *Config) {
 	// Merge Core
 	if src.Core.Theme != "" {
@@ -282,12 +307,12 @@ func (l *Loader) Config() *Config {
 	return l.config
 }
 
-// Load loads configuration with the following precedence:
-// 1. CLI flags (applied later)
-// 2. Custom config file (if specified)
+// Load loads configuration with the following precedence (lowest to highest):
+// 1. Built-in defaults (lowest priority)
+// 2. Git config (if not disabled)
 // 3. Default config file (~/.config/differential/config.toml)
-// 4. Git config (if not disabled)
-// 5. Built-in defaults
+// 4. Custom config file (if specified)
+// 5. CLI flags (highest priority, applied later by caller)
 func Load(customConfigPath string, disableGitConfig bool) (*Config, error) {
 	loader := NewLoader()
 	
