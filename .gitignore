@@ -1,19 +1,12 @@
-# Binaries
-differential
-pretty-diff
-*.exe
-*.dll
-*.so
-*.dylib
+# Dependencies
+node_modules/
 
-# Test files
-test*.go
-!tests/**/*_test.go
+# Bun
+bun.lockb
 
-# Go build artifacts
-*.test
-*.out
-vendor/
+# Build output
+dist/
+*.tsbuildinfo
 
 # IDE
 .vscode/
@@ -26,6 +19,10 @@ vendor/
 .DS_Store
 Thumbs.db
 
-# Config
+# Environment
 .env
 .env.local
+.env.*.local
+
+# Test files (keep test/ directory)
+*.test.ts.snap

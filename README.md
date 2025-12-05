@@ -1,248 +1,140 @@
 # Differential
 
-> [!WARNING]
-> **Vibe-Coded Proof of Concept**
->
-> This is an early alpha proof-of-concept that has not been human reviewed. Use at your own risk.
-
-> [!NOTE]
-> **Complete Rewrite - Now Based on OpenCode**
->
-> This project has been completely rewritten to use [OpenCode](https://opencode.ai/)'s battle-tested diff rendering engine. The implementation now exactly matches OpenCode's visual output with all 22 themes, proper ANSI handling, and sophisticated character-level diff highlighting.
-
-A beautiful terminal diff viewer with syntax highlighting, character-level changes, and 22 professionally designed themes. Built on OpenCode's proven diff rendering engine and designed as a delta-like CLI tool.
+A terminal diff viewer with syntax highlighting powered by [OpenTUI](https://github.com/sst/opentui)'s DiffRenderable component.
 
 ## Features
 
-- 🎨 **Syntax Highlighting** - Full language-aware syntax highlighting using Chroma
-- 🔍 **Character-level Diffs** - See exactly what changed within lines
-- 🎯 **Intra-line Highlighting** - Sophisticated highlighting of changed segments
-- 🌈 **22 Beautiful Themes** - All themes from OpenCode with dark/light terminal support
-- 📊 **Side-by-Side View** - Compare files in split view or unified view
-- ⚡ **Fast Performance** - Parallel rendering with ANSI sequence preservation
-- 🔧 **Git Integration** - Drop-in replacement for `git diff`
-- 🎭 **Perfect ANSI Handling** - Preserves syntax highlighting while applying diff colors
+- **Syntax Highlighting** - Tree-sitter based syntax highlighting for 20+ languages
+- **Split & Unified Views** - Toggle between side-by-side and unified diff views
+- **Multiple Themes** - GitHub Dark, Dracula, Monokai, One Dark, Nord, Tokyo Night
+- **Line Numbers** - Optional line number display
+- **Word-level Diffs** - Highlights specific changed words within lines
+- **Multi-file Navigation** - Navigate between files in multi-file diffs
+- **Pipe Support** - Works with `git diff`, `git show`, and any unified diff input
+- **Interactive TUI** - Full-screen terminal interface with keyboard navigation
 
 ## Installation
+
+Requires [Bun](https://bun.sh) runtime.
 
 ```bash
 # Clone the repository
 git clone https://github.com/avgvstvs96/differential
 cd differential
 
-# Build
-go build ./cmd/differential
+# Install dependencies
+bun install
 
-# Optional: Install to PATH
-go install ./cmd/differential
+# Run directly
+bun run src/index.tsx --help
+
+# Or link globally
+bun link
 ```
 
 ## Usage
 
-### Basic Usage
-
 ```bash
 # Compare two files
-differential file1.go file2.go
+differential old.ts new.ts
+
+# View git diff for a file
+differential src/index.ts
 
 # Pipe git diff output
 git diff | differential
+git show HEAD | differential
 
-# Compare git commits/branches
-differential HEAD~3 HEAD
-differential main feature-branch
+# View staged changes
+differential --staged
 
-# Compare directories
-differential dir1/ dir2/
+# View specific commit
+differential --commit abc123
+
+# Side-by-side view
+differential --view split old.ts new.ts
+
+# Different theme
+differential --theme dracula old.ts new.ts
+
+# Pipe mode (non-interactive, colored output)
+differential --pipe old.ts new.ts
+git diff | differential -p
 ```
 
-### Standard Output
+## Options
 
-Differential outputs directly to stdout, making it perfect for piping:
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--view <mode>` | `-v` | View mode: `unified` or `split` (default: unified) |
+| `--theme <name>` | `-t` | Theme name (default: github-dark) |
+| `--no-line-numbers` | `-n` | Hide line numbers |
+| `--pipe` | `-p` | Output colored diff to stdout (non-interactive) |
+| `--staged` | | Show staged changes (git diff --cached) |
+| `--commit <ref>` | `-c` | Show changes for a specific commit |
+| `--help` | `-h` | Show help message |
+| `--version` | | Show version |
 
-```bash
-# Pipe to less for paging
-differential file1.go file2.go | less -R
+## Keybindings (Interactive Mode)
 
-# Save to file
-differential file1.go file2.go > diff.txt
-```
+| Key | Action |
+|-----|--------|
+| `q`, `Esc` | Quit |
+| `v` | Toggle unified/split view |
+| `t` | Cycle through themes |
+| `L` | Toggle line numbers |
+| `n`, `→`, `l` | Next file (in multi-file diffs) |
+| `p`, `←`, `h` | Previous file (in multi-file diffs) |
+| `j`, `↓` | Scroll down |
+| `k`, `↑` | Scroll up |
 
-### Themes
+## Themes
 
-Differential includes all 22 themes from OpenCode:
-
-```bash
-# List available themes
-differential --list-themes
-
-# Set theme with -t or --theme
-differential file1.go file2.go -t dracula
-differential file1.go file2.go --theme nord
-
-# Available themes:
-# opencode (default), aura, ayu, catppuccin, cobalt2, dracula, everforest,
-# github, gruvbox, kanagawa, material, matrix, monokai, nord, one-dark,
-# palenight, rosepine, solarized, synthwave84, tokyonight, vesper, zenburn
-```
-
-### View Modes
-
-```bash
-# Side-by-side view with -s or --side-by-side
-differential file1.go file2.go -s
-differential file1.go file2.go --side-by-side
-
-# Default is unified view
-differential file1.go file2.go
-```
-
-### Width Control
-
-```bash
-# Auto-detect terminal width (default)
-differential file1.go file2.go
-
-# Set specific width
-differential file1.go file2.go --width 120
-differential file1.go file2.go -w 160
-```
-
-### Combining Options
-
-```bash
-# Side-by-side with Nord theme and custom width
-differential file1.go file2.go -s -t nord -w 160
-
-# Piped input with GitHub theme
-git diff | differential -t github
-
-# Side-by-side with Dracula theme
-differential file1.go file2.go --side-by-side --theme dracula
-```
-
-## Configuration
-
-Differential uses a simple CLI interface. For persistent theme preferences, you can create a shell alias:
-
-```bash
-# Add to ~/.bashrc or ~/.zshrc
-alias diff='differential --theme dracula'
-alias gdiff='git diff | differential --theme nord'
-```
-
-## Git Integration
-
-Differential can be used as a drop-in replacement for git diff:
-
-```bash
-# Set as git pager
-git config --global pager.diff differential
-git config --global pager.show differential
-
-# Or pipe git output
-git diff | differential
-git show HEAD | differential --theme dracula
-```
+- **github-dark** - GitHub's dark theme (default)
+- **dracula** - Popular dark theme
+- **monokai** - Classic Sublime Text theme
+- **one-dark** - Atom One Dark theme
+- **nord** - Arctic, north-bluish color palette
+- **tokyonight** - Clean, dark theme inspired by Tokyo at night
 
 ## Examples
 
-### Viewing Code Changes
-
 ```bash
-# Review your staged changes with syntax highlighting
-git diff --cached | differential -t github
+# Review staged changes
+git diff --cached | differential
 
-# Compare feature branch with main in side-by-side view
-differential main feature-branch -s
+# Compare branches
+git diff main..feature | differential --view split
 
-# Review a specific commit
-git show abc123 | differential
+# View a commit with Dracula theme
+git show abc123 | differential --theme dracula
+
+# Quick colored output for scripts
+differential -p old.py new.py | less -R
 ```
-
-### Different File Types
-
-Differential automatically detects file types and applies appropriate syntax highlighting:
-
-```bash
-# Python files
-differential old.py new.py
-
-# JavaScript/TypeScript
-differential src/old.ts src/new.ts -t monokai
-
-# Markdown with GitHub theme
-differential README.old.md README.new.md -t github
-
-# JSON with pretty side-by-side view
-differential config.old.json config.new.json -s
-```
-
-## Tips
-
-1. **Terminal Colors**: Differential automatically detects if your terminal has a dark or light background and adjusts themes accordingly.
-
-2. **Piping to Less**: Differential outputs directly to stdout, making it easy to pipe:
-   ```bash
-   differential file1 file2 | less -R
-   ```
-
-3. **Shell Aliases**: Add convenient aliases to your shell config:
-   ```bash
-   alias d="differential"
-   alias gd="git diff | differential"
-   alias gds="git diff | differential --side-by-side"
-   ```
-
-4. **Custom Width**: Adjust for your terminal size:
-   ```bash
-   differential file1 file2 --width 160  # For wide terminals
-   differential file1 file2 --side-by-side --width 200
-   ```
 
 ## Architecture
 
-Differential is built directly on OpenCode's diff rendering engine with:
-- **Lipgloss v2** - Terminal styling and colors
-- **Chroma v2** - Syntax highlighting with dynamic theme generation
-- **go-diff** - Character-level diff computation
-- **OpenCode's Theme System** - 22 professional themes with color resolution
+Differential is a thin CLI wrapper around [OpenTUI](https://github.com/sst/opentui)'s built-in `<diff>` component. OpenTUI provides:
 
-Key features from OpenCode's implementation:
-- Sophisticated ANSI escape sequence preservation
-- Character-level diff with proper UTF-8 and zero-width character support
-- Parallel rendering using goroutines for performance
-- Dynamic Chroma theme generation from JSON theme files
-- Terminal background detection (dark/light mode)
+- High-performance terminal rendering via native Zig code
+- Tree-sitter based syntax highlighting
+- Word-level diff highlighting
+- Split and unified view modes
+- Flexible layout system (Yoga flexbox)
 
-## Roadmap
-
-### Potential Enhancements
-- 📝 **Context control** - Flag to adjust number of context lines shown
-- 🎨 **Custom user themes** - Support for user-defined theme JSON files
-- 🔗 **Hyperlink support** - Clickable file paths (if terminal supports)
-- 📊 **Diff statistics** - Show file change summaries
-- 🚀 **Performance optimizations** - Streaming parser for very large diffs
-- 🌐 **Color output control** - Flags for forcing/disabling color output
-
-### What's Working Now
-- ✅ All 22 OpenCode themes with proper color application
-- ✅ Character-level diff highlighting
-- ✅ Syntax highlighting for 100+ languages
-- ✅ Side-by-side and unified views
-- ✅ Parallel rendering for performance
-- ✅ Perfect ANSI sequence preservation
+The implementation uses:
+- **@opentui/core** - Core rendering engine
+- **@opentui/react** - React reconciler for building the UI
+- **diff** - Unified diff parsing
+- **cac** - CLI argument parsing
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-- **[OpenCode](https://opencode.ai/)** - This project is built entirely on OpenCode's diff rendering engine. All credit for the sophisticated diff implementation, theme system, and ANSI handling goes to the OpenCode team.
-- **[Delta](https://github.com/dandavison/delta)** - Inspiration for the delta-like CLI interface
-- **[Charm.sh](https://charm.sh/)** - For the excellent Lipgloss and related libraries
+- **[OpenTUI](https://github.com/sst/opentui)** - The TUI framework powering the diff rendering
+- **[Critique](https://github.com/remorses/critique)** - Inspiration for multi-file navigation
+- **[Delta](https://github.com/dandavison/delta)** - Inspiration for the CLI interface

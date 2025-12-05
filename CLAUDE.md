@@ -4,70 +4,112 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Differential is a terminal UI (TUI) for viewing diffs with syntax highlighting and character-level changes. It's inspired by delta and based on OpenCode's diff implementation. This is an early alpha proof-of-concept that hasn't undergone thorough human review.
+Differential is a terminal diff viewer built on OpenTUI's built-in `<diff>` component. It provides syntax-highlighted diff viewing with both interactive TUI mode and pipe mode for scripting.
 
 ## Build and Development Commands
 
 ```bash
-# Build the binary
-go build ./cmd/differential
-
-# Run tests (no tests implemented yet)
-go test ./...
-
 # Install dependencies
-go mod tidy
+bun install
 
-# Run in pipe mode (non-interactive)
-./differential file1.go file2.go --pipe-mode --no-pager
+# Run the CLI
+bun run src/index.tsx --help
 
-# Run in TUI mode (interactive - requires terminal)
-./differential file1.go file2.go
+# Run with arguments
+bun run src/index.tsx file1.ts file2.ts
+bun run src/index.tsx --view split --theme dracula file1.ts file2.ts
+
+# Pipe mode (non-interactive)
+bun run src/index.tsx --pipe file1.ts file2.ts
+
+# View git changes
+bun run src/index.tsx --staged
+bun run src/index.tsx --commit HEAD~1
 ```
 
 ## Architecture Overview
 
-### Core Components
+### Project Structure
 
-1. **Diff Engine** (`internal/diff/`)
-   - `parser.go`: Parses unified diff format, handles both git-style (`--- a/file`) and standard (`--- file`) formats
-   - `highlighter.go`: Implements character-level diff highlighting using diffmatchpatch, preserves ANSI sequences
-   - `renderer.go`: Renders diffs in unified/side-by-side views with syntax highlighting and parallel processing
-   - `types.go`: Core data structures (DiffLine, Hunk, DiffResult, Segment)
+```
+src/
+  index.tsx   # CLI entrypoint - argument parsing and renderer setup
+  app.tsx     # Main React component - file navigation, keyboard handling, layout
+  theme.ts    # Theme definitions (colors for diff, syntax, UI)
+  utils.ts    # Helper functions (language detection, ANSI colors)
+test/
+  *.ts        # Test files for manual testing
+```
 
-2. **Theme System** (`internal/themes/`)
-   - `theme.go`: Theme loader and color resolver, detects terminal background (dark/light)
-   - `chroma.go`: Generates dynamic Chroma styles from theme colors for syntax highlighting
-   - `embedded.go`: Loads 8 built-in themes from JSON files
-   - `themes/*.json`: Theme definitions with dark/light variants
+### Core Dependencies
 
-3. **TUI Application** (`internal/app/`)
-   - `app.go`: Main application logic with two modes:
-     - Pipe mode: Static output for scripting/piping
-     - TUI mode: Interactive with Bubble Tea framework
-   - Handles git integration via exec commands
+- **@opentui/core** - TUI framework providing CliRenderer and core renderables
+- **@opentui/react** - React reconciler for OpenTUI
+- **diff** - Unified diff parsing (parsePatch)
+- **cac** - CLI argument parsing
+- **react** - UI framework
 
-4. **CLI Interface** (`cmd/differential/`)
-   - `main.go`: Cobra-based CLI with flags for themes, view modes, context lines
+### Key Components
 
-### Key Technical Details
+1. **CLI (index.tsx)**
+   - Parses arguments with cac
+   - Reads diff from files, stdin, or git commands
+   - Creates CliRenderer and renders React app
+   - Handles pipe mode for non-interactive output
 
-- **ANSI Sequence Preservation**: The highlighter carefully preserves existing ANSI sequences while applying diff colors by mapping visible positions to byte positions
-- **Parallel Rendering**: Diff lines are rendered in parallel using goroutines for performance
-- **Character-level Diffs**: Uses diffmatchpatch to compute intra-line changes and highlights specific segments
-- **Theme System**: Supports both dark and light terminal backgrounds with automatic detection
-- **Git Integration**: Can parse both piped input and run git/diff commands directly
+2. **App (app.tsx)**
+   - Uses OpenTUI's built-in `<diff>` component for rendering
+   - Manages state: current file, theme, view mode, line numbers
+   - Handles keyboard navigation (file switching, view toggling, theme cycling)
+   - Parses multi-file diffs and allows navigation between them
 
-### Important Implementation Notes
+3. **OpenTUI's `<diff>` Component**
+   - Handles unified and split view rendering
+   - Tree-sitter syntax highlighting
+   - Word-level diff highlighting
+   - Line numbers with diff-aware coloring
+   - Scrolling and viewport management
 
-1. The regex patterns in `parser.go` support both git-style diffs (`--- a/file`) and standard diffs (`--- file timestamp`)
-2. Terminal width detection uses `tput cols` command
-3. The TUI requires a proper terminal and will fail with "could not open a new TTY" in non-terminal environments
-4. Syntax highlighting is only applied to context lines; added/removed lines use diff colors
-5. The renderer handles UTF-8 and zero-width characters correctly
+### Themes (theme.ts)
 
-## Common Issues and Solutions
+Six built-in themes:
+- `github-dark` (default)
+- `dracula`
+- `monokai`
+- `one-dark`
+- `nord`
+- `tokyonight`
 
-- **No output in pipe mode**: Check if the diff is being parsed correctly - the parser expects proper unified diff format
-- **TTY errors**: Use `--pipe-mode` flag when running in non-terminal environments
-- **Theme not loading**: The theme system will fall back to a default theme if initialization fails
+Each theme specifies:
+- Background colors (main, panel)
+- Text colors (normal, muted)
+- Diff colors (added, removed, context backgrounds and foregrounds)
+- Line number colors
+- UI colors (border, accent, hunk headers)
+
+### Input Modes
+
+1. **Two files**: `differential file1 file2` - generates diff using `diff -u`
+2. **Single file**: `differential file` - runs `git diff` on the file
+3. **Stdin**: `git diff | differential` - reads unified diff from pipe
+4. **Git flags**: `--staged` for cached, `--commit <ref>` for specific commits
+
+### Interactive Keybindings
+
+- `q` / `Esc` - Quit
+- `v` - Toggle unified/split view
+- `t` - Cycle themes
+- `L` - Toggle line numbers
+- `n` / `p` / `←` / `→` - Navigate files
+
+## Important Implementation Notes
+
+1. **Built-in diff component** - Uses OpenTUI's `<diff>` component which handles all the complex diff rendering, syntax highlighting, and word-level diffs automatically.
+
+2. **OpenTUI requires a TTY** - Interactive mode needs a real terminal. Use `--pipe` for scripts/CI.
+
+3. **Automatic pipe mode** - If stdout is not a TTY, pipe mode is enabled automatically.
+
+4. **Multi-file parsing** - Uses the `diff` library's `parsePatch()` to split multi-file diffs and enable file navigation.
+
+5. **SyntaxStyle** - Themes define colors that are converted to OpenTUI's SyntaxStyle format for syntax highlighting.
