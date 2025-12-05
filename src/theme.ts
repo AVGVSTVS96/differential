@@ -24,8 +24,19 @@ export interface Theme {
   border: string;
   accent: string;
   hunkHeader: string;
-  // Shiki theme name
-  shikiTheme: string;
+  // Syntax highlighting
+  syntax: {
+    keyword: string;
+    string: string;
+    comment: string;
+    number: string;
+    function: string;
+    type: string;
+    variable: string;
+    property: string;
+    operator: string;
+    punctuation: string;
+  };
 }
 
 export const themes: Record<string, Theme> = {
@@ -33,23 +44,34 @@ export const themes: Record<string, Theme> = {
     name: "GitHub Dark",
     bg: "#0d1117",
     panelBg: "#161b22",
-    text: "#c9d1d9",
+    text: "#e6edf3",
     textMuted: "#8b949e",
-    addedBg: "#12261e",
-    addedFg: "#3fb950",
+    addedBg: "#1a4d1a",
+    addedFg: "#22c55e",
     addedHighlight: "#196c2e",
-    removedBg: "#2d1b1e",
-    removedFg: "#f85149",
+    removedBg: "#4d1a1a",
+    removedFg: "#ef4444",
     removedHighlight: "#8b1c1c",
     contextBg: "#0d1117",
     lineNumberBg: "#161b22",
-    lineNumberFg: "#6e7681",
-    addedLineNumberBg: "#1b4721",
-    removedLineNumberBg: "#67060c",
+    lineNumberFg: "#6b7280",
+    addedLineNumberBg: "#0d3a0d",
+    removedLineNumberBg: "#3a0d0d",
     border: "#30363d",
     accent: "#58a6ff",
     hunkHeader: "#388bfd",
-    shikiTheme: "github-dark-default",
+    syntax: {
+      keyword: "#ff7b72",
+      string: "#a5d6ff",
+      comment: "#8b949e",
+      number: "#79c0ff",
+      function: "#d2a8ff",
+      type: "#ffa657",
+      variable: "#e6edf3",
+      property: "#79c0ff",
+      operator: "#ff7b72",
+      punctuation: "#f0f6fc",
+    },
   },
   dracula: {
     name: "Dracula",
@@ -71,7 +93,18 @@ export const themes: Record<string, Theme> = {
     border: "#44475a",
     accent: "#bd93f9",
     hunkHeader: "#8be9fd",
-    shikiTheme: "dracula",
+    syntax: {
+      keyword: "#ff79c6",
+      string: "#f1fa8c",
+      comment: "#6272a4",
+      number: "#bd93f9",
+      function: "#50fa7b",
+      type: "#8be9fd",
+      variable: "#f8f8f2",
+      property: "#66d9ef",
+      operator: "#ff79c6",
+      punctuation: "#f8f8f2",
+    },
   },
   monokai: {
     name: "Monokai",
@@ -93,7 +126,18 @@ export const themes: Record<string, Theme> = {
     border: "#3e3d32",
     accent: "#66d9ef",
     hunkHeader: "#ae81ff",
-    shikiTheme: "monokai",
+    syntax: {
+      keyword: "#f92672",
+      string: "#e6db74",
+      comment: "#75715e",
+      number: "#ae81ff",
+      function: "#a6e22e",
+      type: "#66d9ef",
+      variable: "#f8f8f2",
+      property: "#66d9ef",
+      operator: "#f92672",
+      punctuation: "#f8f8f2",
+    },
   },
   "one-dark": {
     name: "One Dark",
@@ -115,7 +159,18 @@ export const themes: Record<string, Theme> = {
     border: "#3e4451",
     accent: "#61afef",
     hunkHeader: "#c678dd",
-    shikiTheme: "one-dark-pro",
+    syntax: {
+      keyword: "#c678dd",
+      string: "#98c379",
+      comment: "#5c6370",
+      number: "#d19a66",
+      function: "#61afef",
+      type: "#e5c07b",
+      variable: "#e06c75",
+      property: "#e5c07b",
+      operator: "#56b6c2",
+      punctuation: "#abb2bf",
+    },
   },
   nord: {
     name: "Nord",
@@ -137,7 +192,18 @@ export const themes: Record<string, Theme> = {
     border: "#4c566a",
     accent: "#88c0d0",
     hunkHeader: "#81a1c1",
-    shikiTheme: "nord",
+    syntax: {
+      keyword: "#81a1c1",
+      string: "#a3be8c",
+      comment: "#616e88",
+      number: "#b48ead",
+      function: "#88c0d0",
+      type: "#8fbcbb",
+      variable: "#d8dee9",
+      property: "#8fbcbb",
+      operator: "#81a1c1",
+      punctuation: "#eceff4",
+    },
   },
   tokyonight: {
     name: "Tokyo Night",
@@ -159,7 +225,18 @@ export const themes: Record<string, Theme> = {
     border: "#414868",
     accent: "#7aa2f7",
     hunkHeader: "#bb9af7",
-    shikiTheme: "tokyo-night",
+    syntax: {
+      keyword: "#bb9af7",
+      string: "#9ece6a",
+      comment: "#565f89",
+      number: "#ff9e64",
+      function: "#7aa2f7",
+      type: "#2ac3de",
+      variable: "#c0caf5",
+      property: "#73daca",
+      operator: "#89ddff",
+      punctuation: "#a9b1d6",
+    },
   },
 };
 
